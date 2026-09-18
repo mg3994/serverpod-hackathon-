@@ -10,6 +10,18 @@
 //
 // import 'package:PROJECTNAME_flutter/main.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
 void main() {
-  // Add your app tests here
+  testWidgets('Stream Studio Smoke Test', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: Text('Stream Studio'),
+        ),
+      ),
+    );
+    expect(find.text('Stream Studio'), findsOneWidget);
+  });
 }

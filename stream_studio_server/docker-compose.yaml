@@ -1,5 +1,23 @@
 services:
 
+  postgres:
+    image: postgres:16
+    ports:
+      - "8090:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=stream_studio
+      - POSTGRES_PASSWORD=jXqUaFUT1F0URlaqIfBKRMQ04mrqr6Es
+
+  postgres_test:
+    image: postgres:16
+    ports:
+      - "9090:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=stream_studio_test
+      - POSTGRES_PASSWORD=jXqUaFUT1F0URlaqIfBKRMQ04mrqr6Es
+
   redis:
     image: redis:6.2.6
     ports:
