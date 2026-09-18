@@ -23,7 +23,14 @@ jobs:
 
       - name: Start containers
         working-directory: stream_studio_server
-        run: docker compose up --quiet-pull --build -d
+        run: |
+          n=0
+          until [ "$n" -ge 3 ]
+          do
+             docker compose up --quiet-pull --build -d && break
+             n=$((n+1))
+             sleep 5
+          done
 
       - name: Install dependencies
         run: flutter pub get
