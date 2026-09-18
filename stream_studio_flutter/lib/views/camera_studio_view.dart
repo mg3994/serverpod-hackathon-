@@ -244,10 +244,7 @@ class _CameraStudioViewState extends State<CameraStudioView>
         alignment: Alignment.center,
         children: [
           // Optical Rule of Thirds Grid
-          CustomPaint(
-            size: Size.infinite,
-            painter: _ViewfinderGridPainter(),
-          ),
+          CustomPaint(size: Size.infinite, painter: _ViewfinderGridPainter()),
 
           // Central Animated Reticle
           AnimatedBuilder(
@@ -451,10 +448,7 @@ class _CameraStudioViewState extends State<CameraStudioView>
             child: child,
           );
         } else if (style == 'scale') {
-          return ScaleTransition(
-            scale: animation,
-            child: child,
-          );
+          return ScaleTransition(scale: animation, child: child);
         }
         return FadeTransition(opacity: animation, child: child);
       },
@@ -527,9 +521,7 @@ class _CameraStudioViewState extends State<CameraStudioView>
             child: IconButton(
               icon: const Icon(Icons.close, color: Colors.white),
               onPressed: () => Navigator.of(context).pop(),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.black54,
-              ),
+              style: IconButton.styleFrom(backgroundColor: Colors.black54),
             ),
           ),
 

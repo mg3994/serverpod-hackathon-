@@ -144,11 +144,7 @@ class StudioController extends ChangeNotifier {
     );
 
     _send(
-      StudioMessage(
-        streamId: streamId,
-        type: 'chat',
-        chatMessage: chatMsg,
-      ),
+      StudioMessage(streamId: streamId, type: 'chat', chatMessage: chatMsg),
     );
   }
 
@@ -212,7 +208,6 @@ class StudioController extends ChangeNotifier {
     return await client.overlayPreset.deletePreset(id);
   }
 
-  @override
   void dispose() {
     _inboundSubscription?.cancel();
     _outboundController.close();

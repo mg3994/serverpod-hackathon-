@@ -36,10 +36,7 @@ class StreamMetadataEndpoint extends Endpoint {
   }
 
   /// Get metadata for a specific streamId
-  Future<StreamMetadata?> getMetadata(
-    Session session,
-    String streamId,
-  ) async {
+  Future<StreamMetadata?> getMetadata(Session session, String streamId) async {
     try {
       return await StreamMetadata.db.findFirstRow(
         session,
