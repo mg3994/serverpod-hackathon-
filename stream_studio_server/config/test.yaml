@@ -29,6 +29,12 @@ webServer:
   publicScheme: http
 
 
+database:
+  host: localhost
+  port: 9090
+  name: stream_studio_test
+  user: postgres
+
 # This is the setup for your Redis test instance.
 redis:
   enabled: false
