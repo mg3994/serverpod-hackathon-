@@ -212,7 +212,6 @@ class StudioController extends ChangeNotifier {
     return await client.overlayPreset.deletePreset(id);
   }
 
-  @override
   void dispose() {
     _inboundSubscription?.cancel();
     _outboundController.close();
