@@ -1,0 +1,9 @@
+class: OverlayPreset
+table: overlay_preset
+fields:
+  streamId: String
+  title: String
+  subtitle: String
+  position: String
+  backgroundColor: String
+  textColor: String

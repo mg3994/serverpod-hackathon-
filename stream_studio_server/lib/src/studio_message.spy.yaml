@@ -1,0 +1,11 @@
+class: StudioMessage
+fields:
+  streamId: String
+  type: String # "camera_control", "scene_control", "overlay_config", "signaling", "heartbeat", "chat"
+  # Exactly one of the following will be non-null depending on `type`.
+  cameraControl: CameraControl?
+  sceneControl: SceneControl?
+  overlayConfig: OverlayConfig?
+  signalingMessage: SignalingMessage?
+  heartbeat: StreamHeartbeat?
+  chatMessage: StudioChatMessage?

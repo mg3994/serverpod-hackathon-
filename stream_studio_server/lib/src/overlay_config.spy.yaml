@@ -1,0 +1,11 @@
+class: OverlayConfig
+fields:
+  id: String
+  streamId: String
+  title: String
+  subtitle: String
+  position: String # "lower_third", "top_right", "ticker"
+  isVisible: bool
+  backgroundColor: String # Hex string, e.g., "#FF0000"
+  textColor: String
+  animationStyle: String? # "fade", "slide", "scale"

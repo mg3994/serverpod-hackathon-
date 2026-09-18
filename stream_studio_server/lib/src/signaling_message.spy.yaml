@@ -1,0 +1,9 @@
+class: SignalingMessage
+fields:
+  senderId: String
+  targetId: String
+  type: String # "offer", "answer", "candidate"
+  sdp: String?
+  candidate: String?
+  sdpMid: String?
+  sdpMLineIndex: int?

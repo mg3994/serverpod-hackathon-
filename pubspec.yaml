@@ -1,0 +1,11 @@
+name: _
+publish_to: none
+
+environment:
+  sdk: '^3.12.2'
+
+workspace:
+  - stream_studio_client
+  - stream_studio_server
+  - stream_studio_flutter
+

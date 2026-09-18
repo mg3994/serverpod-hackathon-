@@ -1,0 +1,5 @@
+class: SceneControl
+fields:
+  streamId: String
+  activeScene: String # "camera", "color_bars", "black_slate"
+  transitionType: String? # "cut", "fade"

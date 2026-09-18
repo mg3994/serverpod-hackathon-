@@ -1,0 +1,11 @@
+overlayPreset:
+  - savePreset:
+  - listPresets:
+  - deletePreset:
+streamMetadata:
+  - saveMetadata:
+  - getMetadata:
+studio:
+  - stream:
+greeting:
+  - hello:

@@ -1,0 +1,7 @@
+class: StudioChatMessage
+fields:
+  streamId: String
+  senderName: String
+  message: String
+  timestamp: DateTime
+  isDirectorCue: bool?

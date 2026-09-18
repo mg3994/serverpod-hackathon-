@@ -1,0 +1,9 @@
+class: StreamMetadata
+table: stream_metadata
+fields:
+  streamId: String
+  title: String
+  description: String
+  isLive: bool
+  viewerCount: int
+  startedAt: DateTime?
