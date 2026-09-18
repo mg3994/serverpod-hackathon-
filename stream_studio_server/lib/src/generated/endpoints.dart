@@ -27,29 +27,12 @@ class Endpoints extends _is.EndpointDispatch {
   void initializeEndpoints(_is.Server server) {
     var endpoints = <String, _is.Endpoint>{
       'overlayPreset': _ixzjpcz1.OverlayPresetEndpoint()
-        ..initialize(
-          server,
-          'overlayPreset',
-          null,
-        ),
+        ..initialize(server, 'overlayPreset', null),
       'streamMetadata': _ibhas1hg.StreamMetadataEndpoint()
-        ..initialize(
-          server,
-          'streamMetadata',
-          null,
-        ),
-      'studio': _i6hpvyvn.StudioEndpoint()
-        ..initialize(
-          server,
-          'studio',
-          null,
-        ),
+        ..initialize(server, 'streamMetadata', null),
+      'studio': _i6hpvyvn.StudioEndpoint()..initialize(server, 'studio', null),
       'greeting': _il624ik7.GreetingEndpoint()
-        ..initialize(
-          server,
-          'greeting',
-          null,
-        ),
+        ..initialize(server, 'greeting', null),
     };
     connectors['overlayPreset'] = _is.EndpointConnector(
       name: 'overlayPreset',
@@ -64,17 +47,9 @@ class Endpoints extends _is.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['overlayPreset']
-                          as _ixzjpcz1.OverlayPresetEndpoint)
-                      .savePreset(
-                        session,
-                        params['preset'],
-                      ),
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['overlayPreset'] as _ixzjpcz1.OverlayPresetEndpoint)
+                  .savePreset(session, params['preset']),
         ),
         'listPresets': _is.MethodConnector(
           name: 'listPresets',
@@ -85,17 +60,9 @@ class Endpoints extends _is.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['overlayPreset']
-                          as _ixzjpcz1.OverlayPresetEndpoint)
-                      .listPresets(
-                        session,
-                        params['streamId'],
-                      ),
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['overlayPreset'] as _ixzjpcz1.OverlayPresetEndpoint)
+                  .listPresets(session, params['streamId']),
         ),
         'deletePreset': _is.MethodConnector(
           name: 'deletePreset',
@@ -106,17 +73,9 @@ class Endpoints extends _is.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['overlayPreset']
-                          as _ixzjpcz1.OverlayPresetEndpoint)
-                      .deletePreset(
-                        session,
-                        params['id'],
-                      ),
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['overlayPreset'] as _ixzjpcz1.OverlayPresetEndpoint)
+                  .deletePreset(session, params['id']),
         ),
       },
     );
@@ -133,17 +92,9 @@ class Endpoints extends _is.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['streamMetadata']
-                          as _ibhas1hg.StreamMetadataEndpoint)
-                      .saveMetadata(
-                        session,
-                        params['metadata'],
-                      ),
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['streamMetadata'] as _ibhas1hg.StreamMetadataEndpoint)
+                  .saveMetadata(session, params['metadata']),
         ),
         'getMetadata': _is.MethodConnector(
           name: 'getMetadata',
@@ -154,17 +105,9 @@ class Endpoints extends _is.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['streamMetadata']
-                          as _ibhas1hg.StreamMetadataEndpoint)
-                      .getMetadata(
-                        session,
-                        params['streamId'],
-                      ),
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['streamMetadata'] as _ibhas1hg.StreamMetadataEndpoint)
+                  .getMetadata(session, params['streamId']),
         ),
       },
     );
@@ -214,15 +157,11 @@ class Endpoints extends _is.EndpointDispatch {
               nullable: false,
             ),
           },
-          call:
-              (
-                _is.Session session,
-                Map<String, dynamic> params,
-              ) async =>
-                  (endpoints['greeting'] as _il624ik7.GreetingEndpoint).hello(
-                    session,
-                    params['name'],
-                  ),
+          call: (_is.Session session, Map<String, dynamic> params) async =>
+              (endpoints['greeting'] as _il624ik7.GreetingEndpoint).hello(
+                session,
+                params['name'],
+              ),
         ),
       },
     );

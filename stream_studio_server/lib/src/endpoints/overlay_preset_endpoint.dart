@@ -46,10 +46,7 @@ class OverlayPresetEndpoint extends Endpoint {
   }
 
   /// Delete an overlay preset by ID
-  Future<bool> deletePreset(
-    Session session,
-    int id,
-  ) async {
+  Future<bool> deletePreset(Session session, int id) async {
     try {
       final deleted = await OverlayPreset.db.deleteWhere(
         session,

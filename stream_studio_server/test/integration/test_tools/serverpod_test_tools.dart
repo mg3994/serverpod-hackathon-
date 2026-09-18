@@ -167,30 +167,15 @@ class _InternalTestEndpoints extends TestEndpoints
     _is.SerializationManager serializationManager,
     _is.EndpointDispatch endpoints,
   ) {
-    overlayPreset = _OverlayPresetEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    streamMetadata = _StreamMetadataEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    studio = _StudioEndpoint(
-      endpoints,
-      serializationManager,
-    );
-    greeting = _GreetingEndpoint(
-      endpoints,
-      serializationManager,
-    );
+    overlayPreset = _OverlayPresetEndpoint(endpoints, serializationManager);
+    streamMetadata = _StreamMetadataEndpoint(endpoints, serializationManager);
+    studio = _StudioEndpoint(endpoints, serializationManager);
+    greeting = _GreetingEndpoint(endpoints, serializationManager);
   }
 }
 
 class _OverlayPresetEndpoint {
-  _OverlayPresetEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _OverlayPresetEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _is.EndpointDispatch _endpointDispatch;
 
@@ -291,10 +276,7 @@ class _OverlayPresetEndpoint {
 }
 
 class _StreamMetadataEndpoint {
-  _StreamMetadataEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _StreamMetadataEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _is.EndpointDispatch _endpointDispatch;
 
@@ -364,10 +346,7 @@ class _StreamMetadataEndpoint {
 }
 
 class _StudioEndpoint {
-  _StudioEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _StudioEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _is.EndpointDispatch _endpointDispatch;
 
@@ -380,39 +359,33 @@ class _StudioEndpoint {
   ) {
     var _localTestStreamManager =
         _ist.TestStreamManager<_i85k0vcc.StudioMessage>();
-    _ist.callStreamFunctionAndHandleExceptions(
-      () async {
-        var _localUniqueSession =
-            (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
-              endpoint: 'studio',
-              method: 'stream',
-            );
-        var _localCallContext = await _endpointDispatch
-            .getMethodStreamCallContext(
-              createSessionCallback: (_) => _localUniqueSession,
-              endpointPath: 'studio',
-              methodName: 'stream',
-              arguments: {'streamId': streamId},
-              requestedInputStreams: ['inbound'],
-              serializationManager: _serializationManager,
-            );
-        await _localTestStreamManager.callStreamMethod(
-          _localCallContext,
-          _localUniqueSession,
-          {'inbound': inbound},
-        );
-      },
-      _localTestStreamManager.outputStreamController,
-    );
+    _ist.callStreamFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'studio',
+            method: 'stream',
+          );
+      var _localCallContext = await _endpointDispatch
+          .getMethodStreamCallContext(
+            createSessionCallback: (_) => _localUniqueSession,
+            endpointPath: 'studio',
+            methodName: 'stream',
+            arguments: {'streamId': streamId},
+            requestedInputStreams: ['inbound'],
+            serializationManager: _serializationManager,
+          );
+      await _localTestStreamManager.callStreamMethod(
+        _localCallContext,
+        _localUniqueSession,
+        {'inbound': inbound},
+      );
+    }, _localTestStreamManager.outputStreamController);
     return _localTestStreamManager.outputStreamController.stream;
   }
 }
 
 class _GreetingEndpoint {
-  _GreetingEndpoint(
-    this._endpointDispatch,
-    this._serializationManager,
-  );
+  _GreetingEndpoint(this._endpointDispatch, this._serializationManager);
 
   final _is.EndpointDispatch _endpointDispatch;
 

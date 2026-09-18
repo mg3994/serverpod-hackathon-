@@ -185,66 +185,35 @@ class _OverlayPresetImpl extends OverlayPreset {
 class OverlayPresetUpdateTable extends _is.UpdateTable<OverlayPresetTable> {
   OverlayPresetUpdateTable(super.table);
 
-  _is.ColumnValue<String, String> streamId(String value) => _is.ColumnValue(
-    table.streamId,
-    value,
-  );
+  _is.ColumnValue<String, String> streamId(String value) =>
+      _is.ColumnValue(table.streamId, value);
 
-  _is.ColumnValue<String, String> title(String value) => _is.ColumnValue(
-    table.title,
-    value,
-  );
+  _is.ColumnValue<String, String> title(String value) =>
+      _is.ColumnValue(table.title, value);
 
-  _is.ColumnValue<String, String> subtitle(String value) => _is.ColumnValue(
-    table.subtitle,
-    value,
-  );
+  _is.ColumnValue<String, String> subtitle(String value) =>
+      _is.ColumnValue(table.subtitle, value);
 
-  _is.ColumnValue<String, String> position(String value) => _is.ColumnValue(
-    table.position,
-    value,
-  );
+  _is.ColumnValue<String, String> position(String value) =>
+      _is.ColumnValue(table.position, value);
 
   _is.ColumnValue<String, String> backgroundColor(String value) =>
-      _is.ColumnValue(
-        table.backgroundColor,
-        value,
-      );
+      _is.ColumnValue(table.backgroundColor, value);
 
-  _is.ColumnValue<String, String> textColor(String value) => _is.ColumnValue(
-    table.textColor,
-    value,
-  );
+  _is.ColumnValue<String, String> textColor(String value) =>
+      _is.ColumnValue(table.textColor, value);
 }
 
 class OverlayPresetTable extends _is.Table<int?> {
   OverlayPresetTable({super.tableRelation})
     : super(tableName: 'overlay_preset') {
     updateTable = OverlayPresetUpdateTable(this);
-    streamId = _is.ColumnString(
-      'streamId',
-      this,
-    );
-    title = _is.ColumnString(
-      'title',
-      this,
-    );
-    subtitle = _is.ColumnString(
-      'subtitle',
-      this,
-    );
-    position = _is.ColumnString(
-      'position',
-      this,
-    );
-    backgroundColor = _is.ColumnString(
-      'backgroundColor',
-      this,
-    );
-    textColor = _is.ColumnString(
-      'textColor',
-      this,
-    );
+    streamId = _is.ColumnString('streamId', this);
+    title = _is.ColumnString('title', this);
+    subtitle = _is.ColumnString('subtitle', this);
+    position = _is.ColumnString('position', this);
+    backgroundColor = _is.ColumnString('backgroundColor', this);
+    textColor = _is.ColumnString('textColor', this);
   }
 
   late final OverlayPresetUpdateTable updateTable;
@@ -441,10 +410,7 @@ class OverlayPresetRepository {
     OverlayPreset row, {
     _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<OverlayPreset>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<OverlayPreset>(row, transaction: transaction);
   }
 
   /// Upserts all [OverlayPreset]s in the list and returns the resulting rows.
@@ -634,10 +600,7 @@ class OverlayPresetRepository {
     OverlayPreset row, {
     _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<OverlayPreset>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<OverlayPreset>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

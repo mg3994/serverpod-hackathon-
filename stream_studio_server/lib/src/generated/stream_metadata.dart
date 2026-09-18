@@ -187,66 +187,35 @@ class _StreamMetadataImpl extends StreamMetadata {
 class StreamMetadataUpdateTable extends _is.UpdateTable<StreamMetadataTable> {
   StreamMetadataUpdateTable(super.table);
 
-  _is.ColumnValue<String, String> streamId(String value) => _is.ColumnValue(
-    table.streamId,
-    value,
-  );
+  _is.ColumnValue<String, String> streamId(String value) =>
+      _is.ColumnValue(table.streamId, value);
 
-  _is.ColumnValue<String, String> title(String value) => _is.ColumnValue(
-    table.title,
-    value,
-  );
+  _is.ColumnValue<String, String> title(String value) =>
+      _is.ColumnValue(table.title, value);
 
-  _is.ColumnValue<String, String> description(String value) => _is.ColumnValue(
-    table.description,
-    value,
-  );
+  _is.ColumnValue<String, String> description(String value) =>
+      _is.ColumnValue(table.description, value);
 
-  _is.ColumnValue<bool, bool> isLive(bool value) => _is.ColumnValue(
-    table.isLive,
-    value,
-  );
+  _is.ColumnValue<bool, bool> isLive(bool value) =>
+      _is.ColumnValue(table.isLive, value);
 
-  _is.ColumnValue<int, int> viewerCount(int value) => _is.ColumnValue(
-    table.viewerCount,
-    value,
-  );
+  _is.ColumnValue<int, int> viewerCount(int value) =>
+      _is.ColumnValue(table.viewerCount, value);
 
   _is.ColumnValue<DateTime, DateTime> startedAt(DateTime? value) =>
-      _is.ColumnValue(
-        table.startedAt,
-        value,
-      );
+      _is.ColumnValue(table.startedAt, value);
 }
 
 class StreamMetadataTable extends _is.Table<int?> {
   StreamMetadataTable({super.tableRelation})
     : super(tableName: 'stream_metadata') {
     updateTable = StreamMetadataUpdateTable(this);
-    streamId = _is.ColumnString(
-      'streamId',
-      this,
-    );
-    title = _is.ColumnString(
-      'title',
-      this,
-    );
-    description = _is.ColumnString(
-      'description',
-      this,
-    );
-    isLive = _is.ColumnBool(
-      'isLive',
-      this,
-    );
-    viewerCount = _is.ColumnInt(
-      'viewerCount',
-      this,
-    );
-    startedAt = _is.ColumnDateTime(
-      'startedAt',
-      this,
-    );
+    streamId = _is.ColumnString('streamId', this);
+    title = _is.ColumnString('title', this);
+    description = _is.ColumnString('description', this);
+    isLive = _is.ColumnBool('isLive', this);
+    viewerCount = _is.ColumnInt('viewerCount', this);
+    startedAt = _is.ColumnDateTime('startedAt', this);
   }
 
   late final StreamMetadataUpdateTable updateTable;
@@ -443,10 +412,7 @@ class StreamMetadataRepository {
     StreamMetadata row, {
     _is.Transaction? transaction,
   }) async {
-    return session.db.insertRow<StreamMetadata>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.insertRow<StreamMetadata>(row, transaction: transaction);
   }
 
   /// Upserts all [StreamMetadata]s in the list and returns the resulting rows.
@@ -636,10 +602,7 @@ class StreamMetadataRepository {
     StreamMetadata row, {
     _is.Transaction? transaction,
   }) async {
-    return session.db.deleteRow<StreamMetadata>(
-      row,
-      transaction: transaction,
-    );
+    return session.db.deleteRow<StreamMetadata>(row, transaction: transaction);
   }
 
   /// Deletes all rows matching the [where] expression.

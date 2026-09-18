@@ -43,9 +43,7 @@ void run(List<String> args) async {
   } else {
     // If the flutter web app has not been built, serve the build app page.
     final defaultRoute = StaticRoute.file(
-      File(
-        Uri(path: 'web/pages/build_flutter_app.html').toFilePath(),
-      ),
+      File(Uri(path: 'web/pages/build_flutter_app.html').toFilePath()),
     );
 
     pod.webServer.addMiddleware(
@@ -56,10 +54,7 @@ void run(List<String> args) async {
       '/',
     );
 
-    pod.webServer.addRoute(
-      defaultRoute,
-      '/**',
-    );
+    pod.webServer.addRoute(defaultRoute, '/**');
   }
 
   // Configure cloud storage.

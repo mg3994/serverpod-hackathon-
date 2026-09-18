@@ -144,11 +144,7 @@ class StudioController extends ChangeNotifier {
     );
 
     _send(
-      StudioMessage(
-        streamId: streamId,
-        type: 'chat',
-        chatMessage: chatMsg,
-      ),
+      StudioMessage(streamId: streamId, type: 'chat', chatMessage: chatMsg),
     );
   }
 
