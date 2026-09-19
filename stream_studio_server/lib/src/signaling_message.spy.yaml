@@ -2,7 +2,7 @@ class: SignalingMessage
 fields:
   senderId: String
   targetId: String
-  type: String # "offer", "answer", "candidate"
+  type: String # "offer", "answer", "candidate", "request"
   sdp: String?
   candidate: String?
   sdpMid: String?

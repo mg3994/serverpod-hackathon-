@@ -13,11 +13,14 @@
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:stream_studio_server/src/generated/overlay_preset.dart'
     as _iy80dre6;
+import 'package:stream_studio_server/src/generated/rtmp_destination.dart'
+    as _icopgf4p;
 import 'package:stream_studio_server/src/generated/stream_metadata.dart'
     as _ixrhpspk;
 import 'package:stream_studio_server/src/generated/studio_message.dart'
     as _i85k0vcc;
 import '../endpoints/overlay_preset_endpoint.dart' as _ixzjpcz1;
+import '../endpoints/rtmp_destination_endpoint.dart' as _i7c3wz1m;
 import '../endpoints/stream_metadata_endpoint.dart' as _ibhas1hg;
 import '../endpoints/studio_endpoint.dart' as _i6hpvyvn;
 import '../greetings/greeting_endpoint.dart' as _il624ik7;
@@ -30,6 +33,12 @@ class Endpoints extends _is.EndpointDispatch {
         ..initialize(
           server,
           'overlayPreset',
+          null,
+        ),
+      'rtmpDestination': _i7c3wz1m.RtmpDestinationEndpoint()
+        ..initialize(
+          server,
+          'rtmpDestination',
           null,
         ),
       'streamMetadata': _ibhas1hg.StreamMetadataEndpoint()
@@ -114,6 +123,75 @@ class Endpoints extends _is.EndpointDispatch {
                   (endpoints['overlayPreset']
                           as _ixzjpcz1.OverlayPresetEndpoint)
                       .deletePreset(
+                        session,
+                        params['id'],
+                      ),
+        ),
+      },
+    );
+    connectors['rtmpDestination'] = _is.EndpointConnector(
+      name: 'rtmpDestination',
+      endpoint: endpoints['rtmpDestination']!,
+      methodConnectors: {
+        'saveDestination': _is.MethodConnector(
+          name: 'saveDestination',
+          params: {
+            'destination': _is.ParameterDescription(
+              name: 'destination',
+              type: _is.getType<_icopgf4p.RtmpDestination>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['rtmpDestination']
+                          as _i7c3wz1m.RtmpDestinationEndpoint)
+                      .saveDestination(
+                        session,
+                        params['destination'],
+                      ),
+        ),
+        'listDestinations': _is.MethodConnector(
+          name: 'listDestinations',
+          params: {
+            'streamId': _is.ParameterDescription(
+              name: 'streamId',
+              type: _is.getType<String>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['rtmpDestination']
+                          as _i7c3wz1m.RtmpDestinationEndpoint)
+                      .listDestinations(
+                        session,
+                        params['streamId'],
+                      ),
+        ),
+        'deleteDestination': _is.MethodConnector(
+          name: 'deleteDestination',
+          params: {
+            'id': _is.ParameterDescription(
+              name: 'id',
+              type: _is.getType<int>(),
+              nullable: false,
+            ),
+          },
+          call:
+              (
+                _is.Session session,
+                Map<String, dynamic> params,
+              ) async =>
+                  (endpoints['rtmpDestination']
+                          as _i7c3wz1m.RtmpDestinationEndpoint)
+                      .deleteDestination(
                         session,
                         params['id'],
                       ),

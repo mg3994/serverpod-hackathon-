@@ -16,6 +16,7 @@ abstract class CameraControl
     implements _is.SerializableModel, _is.ProtocolSerialization {
   CameraControl._({
     required this.streamId,
+    this.targetDeviceId,
     required this.torchOn,
     required this.zoomLevel,
     required this.activeCameraIndex,
@@ -24,6 +25,7 @@ abstract class CameraControl
 
   factory CameraControl({
     required String streamId,
+    String? targetDeviceId,
     required bool torchOn,
     required double zoomLevel,
     required int activeCameraIndex,
@@ -33,6 +35,7 @@ abstract class CameraControl
   factory CameraControl.fromJson(Map<String, dynamic> jsonSerialization) {
     return CameraControl(
       streamId: jsonSerialization['streamId'] as String,
+      targetDeviceId: jsonSerialization['targetDeviceId'] as String?,
       torchOn: _is.BoolJsonExtension.fromJson(jsonSerialization['torchOn']),
       zoomLevel: (jsonSerialization['zoomLevel'] as num).toDouble(),
       activeCameraIndex: jsonSerialization['activeCameraIndex'] as int,
@@ -43,6 +46,8 @@ abstract class CameraControl
   }
 
   String streamId;
+
+  String? targetDeviceId;
 
   bool torchOn;
 
@@ -57,6 +62,7 @@ abstract class CameraControl
   @_is.useResult
   CameraControl copyWith({
     String? streamId,
+    String? targetDeviceId,
     bool? torchOn,
     double? zoomLevel,
     int? activeCameraIndex,
@@ -67,6 +73,7 @@ abstract class CameraControl
     return {
       '__className__': 'CameraControl',
       'streamId': streamId,
+      if (targetDeviceId != null) 'targetDeviceId': targetDeviceId,
       'torchOn': torchOn,
       'zoomLevel': zoomLevel,
       'activeCameraIndex': activeCameraIndex,
@@ -79,6 +86,7 @@ abstract class CameraControl
     return {
       '__className__': 'CameraControl',
       'streamId': streamId,
+      if (targetDeviceId != null) 'targetDeviceId': targetDeviceId,
       'torchOn': torchOn,
       'zoomLevel': zoomLevel,
       'activeCameraIndex': activeCameraIndex,
@@ -97,12 +105,14 @@ class _Undefined {}
 class _CameraControlImpl extends CameraControl {
   _CameraControlImpl({
     required String streamId,
+    String? targetDeviceId,
     required bool torchOn,
     required double zoomLevel,
     required int activeCameraIndex,
     bool? isMuted,
   }) : super._(
          streamId: streamId,
+         targetDeviceId: targetDeviceId,
          torchOn: torchOn,
          zoomLevel: zoomLevel,
          activeCameraIndex: activeCameraIndex,
@@ -115,6 +125,7 @@ class _CameraControlImpl extends CameraControl {
   @override
   CameraControl copyWith({
     String? streamId,
+    Object? targetDeviceId = _Undefined,
     bool? torchOn,
     double? zoomLevel,
     int? activeCameraIndex,
@@ -122,6 +133,9 @@ class _CameraControlImpl extends CameraControl {
   }) {
     return CameraControl(
       streamId: streamId ?? this.streamId,
+      targetDeviceId: targetDeviceId is String?
+          ? targetDeviceId
+          : this.targetDeviceId,
       torchOn: torchOn ?? this.torchOn,
       zoomLevel: zoomLevel ?? this.zoomLevel,
       activeCameraIndex: activeCameraIndex ?? this.activeCameraIndex,

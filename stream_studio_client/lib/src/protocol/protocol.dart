@@ -14,20 +14,32 @@
 import 'package:serverpod_client/serverpod_client.dart' as _isc;
 import 'package:stream_studio_client/src/protocol/overlay_preset.dart'
     as _ii7eikmo;
+import 'package:stream_studio_client/src/protocol/rtmp_destination.dart'
+    as _ik58i5cj;
+import 'banner_config.dart' as _i6bp45ta;
+import 'branding_config.dart' as _ip33n6wn;
+import 'broadcast_control.dart' as _ixxztjiw;
 import 'camera_control.dart' as _i5egoacg;
+import 'featured_comment.dart' as _idf8todo;
 import 'greetings/greeting.dart' as _izw8z7ou;
 import 'overlay_config.dart' as _i5wjbxoj;
 import 'overlay_preset.dart' as _ii3kajpc;
+import 'rtmp_destination.dart' as _ivp2jp3i;
 import 'scene_control.dart' as _ivqo3tx9;
 import 'signaling_message.dart' as _idk4v8xb;
 import 'stream_heartbeat.dart' as _iuw8y9dd;
 import 'stream_metadata.dart' as _ikwzexvi;
 import 'studio_chat_message.dart' as _i46ogjeh;
 import 'studio_message.dart' as _i3ax77il;
+export 'banner_config.dart';
+export 'branding_config.dart';
+export 'broadcast_control.dart';
 export 'camera_control.dart';
+export 'featured_comment.dart';
 export 'greetings/greeting.dart';
 export 'overlay_config.dart';
 export 'overlay_preset.dart';
+export 'rtmp_destination.dart';
 export 'scene_control.dart';
 export 'signaling_message.dart';
 export 'stream_heartbeat.dart';
@@ -70,8 +82,20 @@ class Protocol extends _isc.SerializationManager {
       }
     }
 
+    if (t == _i6bp45ta.BannerConfig) {
+      return _i6bp45ta.BannerConfig.fromJson(data) as T;
+    }
+    if (t == _ip33n6wn.BrandingConfig) {
+      return _ip33n6wn.BrandingConfig.fromJson(data) as T;
+    }
+    if (t == _ixxztjiw.BroadcastControl) {
+      return _ixxztjiw.BroadcastControl.fromJson(data) as T;
+    }
     if (t == _i5egoacg.CameraControl) {
       return _i5egoacg.CameraControl.fromJson(data) as T;
+    }
+    if (t == _idf8todo.FeaturedComment) {
+      return _idf8todo.FeaturedComment.fromJson(data) as T;
     }
     if (t == _izw8z7ou.Greeting) {
       return _izw8z7ou.Greeting.fromJson(data) as T;
@@ -81,6 +105,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _ii3kajpc.OverlayPreset) {
       return _ii3kajpc.OverlayPreset.fromJson(data) as T;
+    }
+    if (t == _ivp2jp3i.RtmpDestination) {
+      return _ivp2jp3i.RtmpDestination.fromJson(data) as T;
     }
     if (t == _ivqo3tx9.SceneControl) {
       return _ivqo3tx9.SceneControl.fromJson(data) as T;
@@ -100,8 +127,23 @@ class Protocol extends _isc.SerializationManager {
     if (t == _i3ax77il.StudioMessage) {
       return _i3ax77il.StudioMessage.fromJson(data) as T;
     }
+    if (t == _isc.getType<_i6bp45ta.BannerConfig?>()) {
+      return (data != null ? _i6bp45ta.BannerConfig.fromJson(data) : null) as T;
+    }
+    if (t == _isc.getType<_ip33n6wn.BrandingConfig?>()) {
+      return (data != null ? _ip33n6wn.BrandingConfig.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_ixxztjiw.BroadcastControl?>()) {
+      return (data != null ? _ixxztjiw.BroadcastControl.fromJson(data) : null)
+          as T;
+    }
     if (t == _isc.getType<_i5egoacg.CameraControl?>()) {
       return (data != null ? _i5egoacg.CameraControl.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_idf8todo.FeaturedComment?>()) {
+      return (data != null ? _idf8todo.FeaturedComment.fromJson(data) : null)
           as T;
     }
     if (t == _isc.getType<_izw8z7ou.Greeting?>()) {
@@ -113,6 +155,10 @@ class Protocol extends _isc.SerializationManager {
     }
     if (t == _isc.getType<_ii3kajpc.OverlayPreset?>()) {
       return (data != null ? _ii3kajpc.OverlayPreset.fromJson(data) : null)
+          as T;
+    }
+    if (t == _isc.getType<_ivp2jp3i.RtmpDestination?>()) {
+      return (data != null ? _ivp2jp3i.RtmpDestination.fromJson(data) : null)
           as T;
     }
     if (t == _isc.getType<_ivqo3tx9.SceneControl?>()) {
@@ -138,9 +184,18 @@ class Protocol extends _isc.SerializationManager {
       return (data != null ? _i3ax77il.StudioMessage.fromJson(data) : null)
           as T;
     }
+    if (t == List<String>) {
+      return (data as List).map((e) => deserialize<String>(e)).toList() as T;
+    }
     if (t == List<_ii7eikmo.OverlayPreset>) {
       return (data as List)
               .map((e) => deserialize<_ii7eikmo.OverlayPreset>(e))
+              .toList()
+          as T;
+    }
+    if (t == List<_ik58i5cj.RtmpDestination>) {
+      return (data as List)
+              .map((e) => deserialize<_ik58i5cj.RtmpDestination>(e))
               .toList()
           as T;
     }
@@ -149,10 +204,15 @@ class Protocol extends _isc.SerializationManager {
 
   static String? getClassNameForType(Type type) {
     return switch (type) {
+      _i6bp45ta.BannerConfig => 'BannerConfig',
+      _ip33n6wn.BrandingConfig => 'BrandingConfig',
+      _ixxztjiw.BroadcastControl => 'BroadcastControl',
       _i5egoacg.CameraControl => 'CameraControl',
+      _idf8todo.FeaturedComment => 'FeaturedComment',
       _izw8z7ou.Greeting => 'Greeting',
       _i5wjbxoj.OverlayConfig => 'OverlayConfig',
       _ii3kajpc.OverlayPreset => 'OverlayPreset',
+      _ivp2jp3i.RtmpDestination => 'RtmpDestination',
       _ivqo3tx9.SceneControl => 'SceneControl',
       _idk4v8xb.SignalingMessage => 'SignalingMessage',
       _iuw8y9dd.StreamHeartbeat => 'StreamHeartbeat',
@@ -176,14 +236,24 @@ class Protocol extends _isc.SerializationManager {
     }
 
     switch (data) {
+      case _i6bp45ta.BannerConfig():
+        return 'BannerConfig';
+      case _ip33n6wn.BrandingConfig():
+        return 'BrandingConfig';
+      case _ixxztjiw.BroadcastControl():
+        return 'BroadcastControl';
       case _i5egoacg.CameraControl():
         return 'CameraControl';
+      case _idf8todo.FeaturedComment():
+        return 'FeaturedComment';
       case _izw8z7ou.Greeting():
         return 'Greeting';
       case _i5wjbxoj.OverlayConfig():
         return 'OverlayConfig';
       case _ii3kajpc.OverlayPreset():
         return 'OverlayPreset';
+      case _ivp2jp3i.RtmpDestination():
+        return 'RtmpDestination';
       case _ivqo3tx9.SceneControl():
         return 'SceneControl';
       case _idk4v8xb.SignalingMessage():
@@ -206,8 +276,20 @@ class Protocol extends _isc.SerializationManager {
     if (dataClassName is! String) {
       return super.deserializeByClassName(data);
     }
+    if (dataClassName == 'BannerConfig') {
+      return deserialize<_i6bp45ta.BannerConfig>(data['data']);
+    }
+    if (dataClassName == 'BrandingConfig') {
+      return deserialize<_ip33n6wn.BrandingConfig>(data['data']);
+    }
+    if (dataClassName == 'BroadcastControl') {
+      return deserialize<_ixxztjiw.BroadcastControl>(data['data']);
+    }
     if (dataClassName == 'CameraControl') {
       return deserialize<_i5egoacg.CameraControl>(data['data']);
+    }
+    if (dataClassName == 'FeaturedComment') {
+      return deserialize<_idf8todo.FeaturedComment>(data['data']);
     }
     if (dataClassName == 'Greeting') {
       return deserialize<_izw8z7ou.Greeting>(data['data']);
@@ -217,6 +299,9 @@ class Protocol extends _isc.SerializationManager {
     }
     if (dataClassName == 'OverlayPreset') {
       return deserialize<_ii3kajpc.OverlayPreset>(data['data']);
+    }
+    if (dataClassName == 'RtmpDestination') {
+      return deserialize<_ivp2jp3i.RtmpDestination>(data['data']);
     }
     if (dataClassName == 'SceneControl') {
       return deserialize<_ivqo3tx9.SceneControl>(data['data']);

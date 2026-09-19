@@ -1,5 +1,9 @@
 class: SceneControl
 fields:
   streamId: String
+  targetDeviceId: String? # If null, applies to all
   activeScene: String # "camera", "color_bars", "black_slate"
+  layout: String # "solo", "grid", "pip", "screen_share"
+  stageDeviceIds: List<String> # Devices currently "on stage"
+  programDeviceId: String? # Primary device for Solo or PiP
   transitionType: String? # "cut", "fade"

@@ -17,6 +17,8 @@ import 'package:stream_studio_client/src/protocol/greetings/greeting.dart'
     as _iryk0ksj;
 import 'package:stream_studio_client/src/protocol/overlay_preset.dart'
     as _ii7eikmo;
+import 'package:stream_studio_client/src/protocol/rtmp_destination.dart'
+    as _ik58i5cj;
 import 'package:stream_studio_client/src/protocol/stream_metadata.dart'
     as _iaurc9gq;
 import 'package:stream_studio_client/src/protocol/studio_message.dart'
@@ -55,10 +57,40 @@ class EndpointOverlayPreset extends _isc.EndpointRef {
   );
 }
 
-/// REST endpoint for managing stream metadata.
-///
-/// Metadata (title, description, live status) is stored persistently so it
-/// survives server restarts and can be fetched by any client on reconnect.
+/// {@category Endpoint}
+class EndpointRtmpDestination extends _isc.EndpointRef {
+  EndpointRtmpDestination(_isc.EndpointCaller caller) : super(caller);
+
+  @override
+  String get name => 'rtmpDestination';
+
+  /// Save a new RTMP destination or update if existing ID provided
+  _ida.Future<_ik58i5cj.RtmpDestination> saveDestination(
+    _ik58i5cj.RtmpDestination destination,
+  ) => caller.callServerEndpoint<_ik58i5cj.RtmpDestination>(
+    'rtmpDestination',
+    'saveDestination',
+    {'destination': destination},
+  );
+
+  /// List all RTMP destinations for a specific streamId
+  _ida.Future<List<_ik58i5cj.RtmpDestination>> listDestinations(
+    String streamId,
+  ) => caller.callServerEndpoint<List<_ik58i5cj.RtmpDestination>>(
+    'rtmpDestination',
+    'listDestinations',
+    {'streamId': streamId},
+  );
+
+  /// Delete an RTMP destination by ID
+  _ida.Future<bool> deleteDestination(int id) =>
+      caller.callServerEndpoint<bool>(
+        'rtmpDestination',
+        'deleteDestination',
+        {'id': id},
+      );
+}
+
 /// {@category Endpoint}
 class EndpointStreamMetadata extends _isc.EndpointRef {
   EndpointStreamMetadata(_isc.EndpointCaller caller) : super(caller);
@@ -66,7 +98,7 @@ class EndpointStreamMetadata extends _isc.EndpointRef {
   @override
   String get name => 'streamMetadata';
 
-  /// Save or update stream metadata. Upserts based on [streamId].
+  /// Save or update stream metadata
   _ida.Future<_iaurc9gq.StreamMetadata> saveMetadata(
     _iaurc9gq.StreamMetadata metadata,
   ) => caller.callServerEndpoint<_iaurc9gq.StreamMetadata>(
@@ -75,8 +107,7 @@ class EndpointStreamMetadata extends _isc.EndpointRef {
     {'metadata': metadata},
   );
 
-  /// Retrieve stream metadata for a given [streamId].
-  /// Returns null if no metadata has been saved yet.
+  /// Get metadata for a specific streamId
   _ida.Future<_iaurc9gq.StreamMetadata?> getMetadata(String streamId) =>
       caller.callServerEndpoint<_iaurc9gq.StreamMetadata?>(
         'streamMetadata',
@@ -164,12 +195,15 @@ class Client extends _isc.ServerpodClientShared {
          httpClientOverride: httpClientOverride,
        ) {
     overlayPreset = EndpointOverlayPreset(this);
+    rtmpDestination = EndpointRtmpDestination(this);
     streamMetadata = EndpointStreamMetadata(this);
     studio = EndpointStudio(this);
     greeting = EndpointGreeting(this);
   }
 
   late final EndpointOverlayPreset overlayPreset;
+
+  late final EndpointRtmpDestination rtmpDestination;
 
   late final EndpointStreamMetadata streamMetadata;
 
@@ -180,6 +214,7 @@ class Client extends _isc.ServerpodClientShared {
   @override
   Map<String, _isc.EndpointRef> get endpointRefLookup => {
     'overlayPreset': overlayPreset,
+    'rtmpDestination': rtmpDestination,
     'streamMetadata': streamMetadata,
     'studio': studio,
     'greeting': greeting,

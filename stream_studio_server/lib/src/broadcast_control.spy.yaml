@@ -1,0 +1,5 @@
+class: BroadcastControl
+fields:
+  streamId: String
+  command: String # "start", "stop"
+  destinationId: int?

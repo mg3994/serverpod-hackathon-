@@ -1,4 +1,4 @@
 type: server
-
+database: true
 client_package_path: ../stream_studio_client
 server_test_tools_path: test/integration/test_tools

@@ -3,6 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:stream_studio_client/stream_studio_client.dart';
 import '../controllers/studio_controller.dart';
+import 'package:camera/camera.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart' as webrtc;
+import 'package:permission_handler/permission_handler.dart';
 
 class CameraStudioView extends StatefulWidget {
   final Client client;
@@ -23,7 +26,13 @@ class _CameraStudioViewState extends State<CameraStudioView>
   late StudioController _controller;
   StreamSubscription<StudioMessage>? _messageSubscription;
 
+  // Real Camera
+  CameraController? _cameraController;
+  List<CameraDescription> _cameras = [];
+  bool _isCameraInitialized = false;
+
   OverlayConfig? _activeOverlay;
+  FeaturedComment? _activeFeaturedComment;
   String _activeScene = 'camera'; // "camera", "color_bars", "black_slate"
   String? _directorCueMessage;
   bool _isConnected = false;
@@ -31,6 +40,7 @@ class _CameraStudioViewState extends State<CameraStudioView>
   bool _isTorchOn = false;
   bool _isAudioMuted = false;
   int _activeCameraIndex = 0; // 0 = Back, 1 = Front
+  bool _isOnAir = false;
   Timer? _heartbeatTimer;
   Timer? _cueTimer;
   final String _deviceId =
@@ -52,7 +62,53 @@ class _CameraStudioViewState extends State<CameraStudioView>
       streamId: widget.streamId,
     );
 
+    _initializeRealCamera();
     _setupStudioCamera();
+  }
+
+  Future<void> _initializeRealCamera() async {
+    final status = await [
+      Permission.camera,
+      Permission.microphone,
+    ].request();
+
+    if (status[Permission.camera]!.isGranted &&
+        status[Permission.microphone]!.isGranted) {
+      _cameras = await availableCameras();
+      if (_cameras.isNotEmpty) {
+        await _setupCameraController(_cameras[_activeCameraIndex]);
+      }
+    }
+  }
+
+  Future<void> _setupCameraController(CameraDescription description) async {
+    await _cameraController?.dispose();
+    _cameraController = CameraController(
+      description,
+      ResolutionPreset.high,
+      enableAudio: true,
+    );
+
+    try {
+      await _cameraController!.initialize();
+      setState(() => _isCameraInitialized = true);
+
+      // Start WebRTC Stream
+      final mediaStream = await webrtc.navigator.mediaDevices.getUserMedia({
+        'audio': true,
+        'video': {
+          'facingMode': description.lensDirection == CameraLensDirection.front
+              ? 'user'
+              : 'environment',
+          'width': 1280,
+          'height': 720,
+        },
+      });
+      
+      await _controller.startLocalStream(mediaStream);
+    } catch (e) {
+      debugPrint('Camera Error: $e');
+    }
   }
 
   void _setupStudioCamera() {
@@ -68,12 +124,30 @@ class _CameraStudioViewState extends State<CameraStudioView>
       if (msg.overlayConfig != null) {
         setState(() => _activeOverlay = msg.overlayConfig);
       } else if (msg.cameraControl != null) {
-        _applyHardwareControls(msg.cameraControl!);
+        if (msg.cameraControl!.targetDeviceId == null ||
+            msg.cameraControl!.targetDeviceId == _deviceId) {
+          _applyHardwareControls(msg.cameraControl!);
+        }
       } else if (msg.sceneControl != null) {
-        setState(() => _activeScene = msg.sceneControl!.activeScene);
+        if (msg.sceneControl!.targetDeviceId == null ||
+            msg.sceneControl!.targetDeviceId == _deviceId) {
+          setState(() => _activeScene = msg.sceneControl!.activeScene);
+        }
       } else if (msg.chatMessage != null) {
         if (msg.chatMessage!.isDirectorCue == true) {
           _showDirectorCue(msg.chatMessage!.message);
+        }
+      } else if (msg.signalingMessage != null) {
+        _handleSignaling(msg.signalingMessage!);
+      } else if (msg.broadcastControl != null) {
+        setState(() {
+          _isOnAir = msg.broadcastControl!.command == 'start';
+        });
+      } else if (msg.featuredComment != null) {
+        setState(() => _activeFeaturedComment = msg.featuredComment);
+      } else if (msg.chatMessage != null) {
+        if (msg.chatMessage!.isPrivate == true && msg.chatMessage!.targetDeviceId == _deviceId) {
+           _showDirectorCue('PRIVATE MSG: ${msg.chatMessage!.message}');
         }
       }
     });
@@ -89,6 +163,21 @@ class _CameraStudioViewState extends State<CameraStudioView>
         setState(() => _directorCueMessage = null);
       }
     });
+  }
+
+  void _handleSignaling(SignalingMessage signaling) {
+    if (signaling.targetId != _deviceId) return;
+
+    if (signaling.type == 'request') {
+      _showDirectorCue('STREAM REQUEST FROM ${signaling.senderId}');
+      _controller.createOffer(_deviceId, signaling.senderId);
+      
+      _controller.sendChatMessage(
+        senderName: 'Camera $_deviceId',
+        message: 'Acknowledged stream request. Starting WebRTC handshake...',
+        isDirectorCue: false,
+      );
+    }
   }
 
   void _startHeartbeatTimer() {
@@ -116,10 +205,21 @@ class _CameraStudioViewState extends State<CameraStudioView>
     setState(() {
       _currentZoom = control.zoomLevel;
       _isTorchOn = control.torchOn;
-      _activeCameraIndex = control.activeCameraIndex;
+      
+      if (_activeCameraIndex != control.activeCameraIndex) {
+        _activeCameraIndex = control.activeCameraIndex;
+        if (_cameras.isNotEmpty) {
+          _setupCameraController(_cameras[_activeCameraIndex % _cameras.length]);
+        }
+      }
+
       if (control.isMuted != null) {
         _isAudioMuted = control.isMuted!;
+        // Handle audio track mute in local stream if needed
       }
+      
+      _cameraController?.setZoomLevel(_currentZoom);
+      _cameraController?.setFlashMode(_isTorchOn ? FlashMode.torch : FlashMode.off);
     });
   }
 
@@ -230,19 +330,23 @@ class _CameraStudioViewState extends State<CameraStudioView>
 
     // Default Camera Feed Viewfinder
     return Container(
-      decoration: BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment.center,
-          radius: 1.2,
-          colors: [
-            _isTorchOn ? const Color(0xff3a3a2a) : const Color(0xff1a1e24),
-            const Color(0xff0a0c10),
-          ],
-        ),
-      ),
+      color: Colors.black,
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // Real Camera Preview
+          if (_isCameraInitialized && _cameraController != null)
+            Center(
+              child: AspectRatio(
+                aspectRatio: _cameraController!.value.aspectRatio,
+                child: CameraPreview(_cameraController!),
+              ),
+            )
+          else
+            const Center(
+              child: CircularProgressIndicator(color: Colors.red),
+            ),
+
           // Optical Rule of Thirds Grid
           CustomPaint(
             size: Size.infinite,
@@ -462,6 +566,159 @@ class _CameraStudioViewState extends State<CameraStudioView>
     );
   }
 
+  IconData _getPlatformIcon(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'youtube':
+        return Icons.play_arrow;
+      case 'twitch':
+        return Icons.videogame_asset;
+      case 'facebook':
+        return Icons.facebook;
+      default:
+        return Icons.chat_bubble;
+    }
+  }
+
+  Color _getPlatformColor(String platform) {
+    if (_controller.brandingConfig != null && _controller.brandingConfig!.overlayColor.isNotEmpty) {
+      return _parseColor(_controller.brandingConfig!.overlayColor, Colors.blueGrey);
+    }
+    
+    switch (platform.toLowerCase()) {
+      case 'youtube':
+        return const Color(0xffFF0000);
+      case 'twitch':
+        return const Color(0xff9146FF);
+      case 'facebook':
+        return const Color(0xff1877F2);
+      default:
+        return Colors.blueGrey;
+    }
+  }
+
+  Widget _buildFeaturedComment(FeaturedComment comment) {
+    if (!comment.isVisible) return const SizedBox.shrink();
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 500),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.0, 0.5),
+            end: Offset.zero,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child: Container(
+        key: ValueKey('featured_${comment.senderName}_${comment.message.hashCode}'),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.95),
+          borderRadius: BorderRadius.circular(4),
+          border: Border(
+            left: BorderSide(color: _getPlatformColor(comment.platform), width: 6),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundImage: comment.avatarUrl != null
+                      ? NetworkImage(comment.avatarUrl!)
+                      : null,
+                  child: comment.avatarUrl == null
+                      ? const Icon(Icons.person, size: 28)
+                      : null,
+                ),
+                Positioned(
+                  right: -4,
+                  bottom: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: _getPlatformColor(comment.platform),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Icon(
+                      _getPlatformIcon(comment.platform),
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    comment.senderName,
+                    style: TextStyle(
+                      color: _getPlatformColor(comment.platform),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    comment.message,
+                    style: const TextStyle(
+                      color: Colors.black87,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBanner(BannerConfig config) {
+    final bgColor = _parseColor(config.backgroundColor, Colors.blue);
+    
+    if (config.isTicker) {
+      return Container(
+        height: 40,
+        color: bgColor,
+        child: _TickerText(text: config.text),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      color: bgColor,
+      child: Text(
+        config.text,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 24,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -519,6 +776,36 @@ class _CameraStudioViewState extends State<CameraStudioView>
               ),
             ),
           ),
+
+          // Program Tally Indicator (Top Center)
+          if (_isOnAir || _controller.stageDeviceIds.contains(_deviceId))
+            Positioned(
+              top: 40,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _isOnAir ? Colors.red : Colors.blue,
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black45, blurRadius: 4)
+                    ],
+                  ),
+                  child: Text(
+                    _isOnAir ? 'ON AIR' : 'ON STAGE',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
 
           // Back / Leave button
           Positioned(
@@ -596,6 +883,45 @@ class _CameraStudioViewState extends State<CameraStudioView>
               ),
             ),
 
+          // Featured Floating Comment
+          if (_activeFeaturedComment != null &&
+              _activeFeaturedComment!.isVisible)
+            Positioned(
+              bottom: 120,
+              left: 40,
+              right: 40,
+              child: _buildFeaturedComment(_activeFeaturedComment!),
+            ),
+
+          // Banner
+          if (_controller.bannerConfig != null && _controller.bannerConfig!.isVisible)
+             Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: _buildBanner(_controller.bannerConfig!),
+            ),
+
+          // Branding Logo
+          if (_controller.brandingConfig != null &&
+              _controller.brandingConfig!.showLogo &&
+              _controller.brandingConfig!.logoUrl != null)
+            Positioned(
+              top: 100,
+              right: _controller.brandingConfig!.logoPosition == 'top_right' ? 24 : null,
+              left: _controller.brandingConfig!.logoPosition == 'top_left' ? 24 : null,
+              child: Opacity(
+                opacity: 0.8,
+                child: Image.network(
+                  _controller.brandingConfig!.logoUrl!,
+                  width: 80,
+                  height: 80,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                ),
+              ),
+            ),
+
           // Camera Operator Action Bar (Bottom)
           Positioned(
             bottom: 24,
@@ -666,10 +992,62 @@ class _CameraStudioViewState extends State<CameraStudioView>
 
   @override
   void dispose() {
+    _cameraController?.dispose();
     _pulseController.dispose();
     _heartbeatTimer?.cancel();
     _cueTimer?.cancel();
     _messageSubscription?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class _TickerText extends StatefulWidget {
+  final String text;
+  const _TickerText({required this.text});
+
+  @override
+  State<_TickerText> createState() => _TickerTextState();
+}
+
+class _TickerTextState extends State<_TickerText> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return FractionalTranslation(
+          translation: Offset(1.0 - (_controller.value * 2.0), 0.0),
+          child: Center(
+            child: Text(
+              widget.text,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+              softWrap: false,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
     _controller.dispose();
     super.dispose();
   }

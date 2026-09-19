@@ -1,6 +1,7 @@
 class: CameraControl
 fields:
   streamId: String
+  targetDeviceId: String? # If null, applies to all
   torchOn: bool
   zoomLevel: double
   activeCameraIndex: int # 0 = Back, 1 = Front

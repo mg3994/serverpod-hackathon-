@@ -3,5 +3,9 @@ fields:
   streamId: String
   senderName: String
   message: String
+  platform: String? # "youtube", "twitch", "facebook", "director"
+  avatarUrl: String?
   timestamp: DateTime
   isDirectorCue: bool?
+  isPrivate: bool?
+  targetDeviceId: String? # For private messages

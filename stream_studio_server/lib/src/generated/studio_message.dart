@@ -12,7 +12,11 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _is;
 import 'package:stream_studio_server/src/generated/protocol.dart' as _icc0dkes;
+import 'banner_config.dart' as _i6bp45ta;
+import 'branding_config.dart' as _ip33n6wn;
+import 'broadcast_control.dart' as _ixxztjiw;
 import 'camera_control.dart' as _i5egoacg;
+import 'featured_comment.dart' as _idf8todo;
 import 'overlay_config.dart' as _i5wjbxoj;
 import 'scene_control.dart' as _ivqo3tx9;
 import 'signaling_message.dart' as _idk4v8xb;
@@ -30,6 +34,10 @@ abstract class StudioMessage
     this.signalingMessage,
     this.heartbeat,
     this.chatMessage,
+    this.broadcastControl,
+    this.featuredComment,
+    this.brandingConfig,
+    this.bannerConfig,
   });
 
   factory StudioMessage({
@@ -41,6 +49,10 @@ abstract class StudioMessage
     _idk4v8xb.SignalingMessage? signalingMessage,
     _iuw8y9dd.StreamHeartbeat? heartbeat,
     _i46ogjeh.StudioChatMessage? chatMessage,
+    _ixxztjiw.BroadcastControl? broadcastControl,
+    _idf8todo.FeaturedComment? featuredComment,
+    _ip33n6wn.BrandingConfig? brandingConfig,
+    _i6bp45ta.BannerConfig? bannerConfig,
   }) = _StudioMessageImpl;
 
   factory StudioMessage.fromJson(Map<String, dynamic> jsonSerialization) {
@@ -77,6 +89,26 @@ abstract class StudioMessage
           : _icc0dkes.Protocol().deserialize<_i46ogjeh.StudioChatMessage>(
               jsonSerialization['chatMessage'],
             ),
+      broadcastControl: jsonSerialization['broadcastControl'] == null
+          ? null
+          : _icc0dkes.Protocol().deserialize<_ixxztjiw.BroadcastControl>(
+              jsonSerialization['broadcastControl'],
+            ),
+      featuredComment: jsonSerialization['featuredComment'] == null
+          ? null
+          : _icc0dkes.Protocol().deserialize<_idf8todo.FeaturedComment>(
+              jsonSerialization['featuredComment'],
+            ),
+      brandingConfig: jsonSerialization['brandingConfig'] == null
+          ? null
+          : _icc0dkes.Protocol().deserialize<_ip33n6wn.BrandingConfig>(
+              jsonSerialization['brandingConfig'],
+            ),
+      bannerConfig: jsonSerialization['bannerConfig'] == null
+          ? null
+          : _icc0dkes.Protocol().deserialize<_i6bp45ta.BannerConfig>(
+              jsonSerialization['bannerConfig'],
+            ),
     );
   }
 
@@ -96,6 +128,14 @@ abstract class StudioMessage
 
   _i46ogjeh.StudioChatMessage? chatMessage;
 
+  _ixxztjiw.BroadcastControl? broadcastControl;
+
+  _idf8todo.FeaturedComment? featuredComment;
+
+  _ip33n6wn.BrandingConfig? brandingConfig;
+
+  _i6bp45ta.BannerConfig? bannerConfig;
+
   /// Returns a shallow copy of this [StudioMessage]
   /// with some or all fields replaced by the given arguments.
   @_is.useResult
@@ -108,6 +148,10 @@ abstract class StudioMessage
     _idk4v8xb.SignalingMessage? signalingMessage,
     _iuw8y9dd.StreamHeartbeat? heartbeat,
     _i46ogjeh.StudioChatMessage? chatMessage,
+    _ixxztjiw.BroadcastControl? broadcastControl,
+    _idf8todo.FeaturedComment? featuredComment,
+    _ip33n6wn.BrandingConfig? brandingConfig,
+    _i6bp45ta.BannerConfig? bannerConfig,
   });
   @override
   Map<String, dynamic> toJson() {
@@ -122,6 +166,11 @@ abstract class StudioMessage
         'signalingMessage': signalingMessage?.toJson(),
       if (heartbeat != null) 'heartbeat': heartbeat?.toJson(),
       if (chatMessage != null) 'chatMessage': chatMessage?.toJson(),
+      if (broadcastControl != null)
+        'broadcastControl': broadcastControl?.toJson(),
+      if (featuredComment != null) 'featuredComment': featuredComment?.toJson(),
+      if (brandingConfig != null) 'brandingConfig': brandingConfig?.toJson(),
+      if (bannerConfig != null) 'bannerConfig': bannerConfig?.toJson(),
     };
   }
 
@@ -141,6 +190,14 @@ abstract class StudioMessage
         'signalingMessage': signalingMessage?.toJsonForProtocol(),
       if (heartbeat != null) 'heartbeat': heartbeat?.toJsonForProtocol(),
       if (chatMessage != null) 'chatMessage': chatMessage?.toJsonForProtocol(),
+      if (broadcastControl != null)
+        'broadcastControl': broadcastControl?.toJsonForProtocol(),
+      if (featuredComment != null)
+        'featuredComment': featuredComment?.toJsonForProtocol(),
+      if (brandingConfig != null)
+        'brandingConfig': brandingConfig?.toJsonForProtocol(),
+      if (bannerConfig != null)
+        'bannerConfig': bannerConfig?.toJsonForProtocol(),
     };
   }
 
@@ -162,6 +219,10 @@ class _StudioMessageImpl extends StudioMessage {
     _idk4v8xb.SignalingMessage? signalingMessage,
     _iuw8y9dd.StreamHeartbeat? heartbeat,
     _i46ogjeh.StudioChatMessage? chatMessage,
+    _ixxztjiw.BroadcastControl? broadcastControl,
+    _idf8todo.FeaturedComment? featuredComment,
+    _ip33n6wn.BrandingConfig? brandingConfig,
+    _i6bp45ta.BannerConfig? bannerConfig,
   }) : super._(
          streamId: streamId,
          type: type,
@@ -171,6 +232,10 @@ class _StudioMessageImpl extends StudioMessage {
          signalingMessage: signalingMessage,
          heartbeat: heartbeat,
          chatMessage: chatMessage,
+         broadcastControl: broadcastControl,
+         featuredComment: featuredComment,
+         brandingConfig: brandingConfig,
+         bannerConfig: bannerConfig,
        );
 
   /// Returns a shallow copy of this [StudioMessage]
@@ -186,6 +251,10 @@ class _StudioMessageImpl extends StudioMessage {
     Object? signalingMessage = _Undefined,
     Object? heartbeat = _Undefined,
     Object? chatMessage = _Undefined,
+    Object? broadcastControl = _Undefined,
+    Object? featuredComment = _Undefined,
+    Object? brandingConfig = _Undefined,
+    Object? bannerConfig = _Undefined,
   }) {
     return StudioMessage(
       streamId: streamId ?? this.streamId,
@@ -208,6 +277,18 @@ class _StudioMessageImpl extends StudioMessage {
       chatMessage: chatMessage is _i46ogjeh.StudioChatMessage?
           ? chatMessage
           : this.chatMessage?.copyWith(),
+      broadcastControl: broadcastControl is _ixxztjiw.BroadcastControl?
+          ? broadcastControl
+          : this.broadcastControl?.copyWith(),
+      featuredComment: featuredComment is _idf8todo.FeaturedComment?
+          ? featuredComment
+          : this.featuredComment?.copyWith(),
+      brandingConfig: brandingConfig is _ip33n6wn.BrandingConfig?
+          ? brandingConfig
+          : this.brandingConfig?.copyWith(),
+      bannerConfig: bannerConfig is _i6bp45ta.BannerConfig?
+          ? bannerConfig
+          : this.bannerConfig?.copyWith(),
     );
   }
 }

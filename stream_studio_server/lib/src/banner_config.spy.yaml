@@ -1,0 +1,8 @@
+class: BannerConfig
+fields:
+  streamId: String
+  text: String
+  isVisible: bool
+  isTicker: bool
+  backgroundColor: String
+  textColor: String

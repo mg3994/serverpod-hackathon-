@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:stream_studio_client/stream_studio_client.dart';
 import '../controllers/studio_controller.dart';
+import 'package:flutter_webrtc/flutter_webrtc.dart';
 
 class CompanionStudioView extends StatefulWidget {
   final Client client;
@@ -23,7 +24,7 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
 
   // Connection State & Telemetry
   bool _isConnected = false;
-  StreamHeartbeat? _latestHeartbeat;
+  String? _selectedDeviceId;
 
   // Stream Metadata State
   final _streamTitleController = TextEditingController(
@@ -61,6 +62,27 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
   // Overlay Presets
   List<OverlayPreset> _presets = [];
 
+  // RTMP Destinations
+  List<RtmpDestination> _rtmpDestinations = [];
+  final _rtmpUrlController = TextEditingController();
+  final _rtmpKeyController = TextEditingController();
+  String _rtmpPlatform = 'YouTube';
+
+  // Branding State
+  final _logoUrlController = TextEditingController(
+    text: 'https://serverpod.dev/assets/img/serverpod-logo-white.png',
+  );
+  String _brandingColorHex = '#3B82F6';
+  bool _showLogo = true;
+
+  // Banners State
+  final _bannerTextController = TextEditingController(text: 'Welcome to StreamStudio!');
+  bool _bannerVisible = false;
+  bool _bannerIsTicker = false;
+
+  final String _companionId =
+      'studio_${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +90,7 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
       client: widget.client,
       streamId: widget.streamId,
     );
+    _controller.ownDeviceId = 'dashboard';
     _initStudio();
   }
 
@@ -79,9 +102,7 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
 
       setState(() => _isConnected = true);
 
-      if (msg.heartbeat != null) {
-        setState(() => _latestHeartbeat = msg.heartbeat);
-      } else if (msg.sceneControl != null) {
+      if (msg.sceneControl != null) {
         setState(() => _activeScene = msg.sceneControl!.activeScene);
       } else if (msg.chatMessage != null) {
         setState(() => _chatMessages.add(msg.chatMessage!));
@@ -111,6 +132,18 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
 
     _loadMetadata();
     _loadPresets();
+    _loadRtmpDestinations();
+  }
+
+  Future<void> _loadRtmpDestinations() async {
+    try {
+      final list = await _controller.listRtmpDestinations();
+      if (mounted) {
+        setState(() => _rtmpDestinations = list);
+      }
+    } catch (e) {
+      debugPrint('Error loading RTMP destinations: $e');
+    }
   }
 
   Future<void> _loadMetadata() async {
@@ -139,6 +172,100 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
     }
   }
 
+  void _openPrivateChat(String deviceId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        final chatController = TextEditingController();
+        return ListenableBuilder(
+          listenable: _controller,
+          builder: (context, _) {
+            final messages = _controller.privateMessages[deviceId] ?? [];
+            return AlertDialog(
+              backgroundColor: const Color(0xff1e1e1e),
+              title: Text('Private Chat with $deviceId', style: const TextStyle(color: Colors.white, fontSize: 14)),
+              content: SizedBox(
+                width: 400,
+                height: 400,
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: messages.length,
+                        itemBuilder: (context, i) {
+                          final m = messages[i];
+                          final isMe = m.senderName == (_controller.ownDeviceId ?? 'dashboard');
+                          return Align(
+                            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                            child: Container(
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: isMe ? Colors.blue[900] : Colors.grey[800],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(m.message, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: chatController,
+                            style: const TextStyle(color: Colors.white, fontSize: 13),
+                            decoration: const InputDecoration(
+                              hintText: 'Type message...',
+                              filled: true,
+                              fillColor: Color(0xff2a2a2a),
+                              border: OutlineInputBorder(),
+                            ),
+                            onSubmitted: (_) {
+                              final text = chatController.text.trim();
+                              if (text.isEmpty) return;
+                              _controller.sendChatMessage(
+                                senderName: _controller.ownDeviceId ?? 'dashboard',
+                                message: text,
+                                isPrivate: true,
+                                targetDeviceId: deviceId,
+                              );
+                              chatController.clear();
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.send, color: Colors.blue),
+                          onPressed: () {
+                            final text = chatController.text.trim();
+                            if (text.isEmpty) return;
+                            _controller.sendChatMessage(
+                              senderName: _controller.ownDeviceId ?? 'dashboard',
+                              message: text,
+                              isPrivate: true,
+                              targetDeviceId: deviceId,
+                            );
+                            chatController.clear();
+                          },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _pushOverlayLive(bool visible) {
     setState(() => _isOverlayVisible = visible);
     _controller.sendOverlay(
@@ -154,6 +281,7 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
 
   void _updateCameraControl() {
     _controller.updateCameraHardware(
+      targetDeviceId: _selectedDeviceId,
       zoomLevel: _zoomLevel,
       torchOn: _torchOn,
       activeCameraIndex: _activeCameraIndex,
@@ -161,9 +289,59 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
     );
   }
 
+  void _requestP2PStream() {
+    final target = _selectedDeviceId ??
+        (_controller.activeDevices.isNotEmpty
+            ? _controller.activeDevices.keys.first
+            : null);
+    if (target == null) return;
+
+    _controller.sendSignalingMessage(
+      SignalingMessage(
+        senderId: _companionId,
+        targetId: target,
+        type: 'request',
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Requesting P2P stream from $target...')),
+    );
+  }
+
+  void _toggleStage(String deviceId) {
+    final currentStage = List<String>.from(_controller.stageDeviceIds);
+    if (currentStage.contains(deviceId)) {
+      currentStage.remove(deviceId);
+    } else {
+      currentStage.add(deviceId);
+    }
+
+    _controller.sendSceneControl(
+      activeScene: 'camera',
+      layout: currentStage.length > 1 ? 'grid' : 'solo',
+      stageDeviceIds: currentStage,
+      programDeviceId: currentStage.isNotEmpty ? currentStage.first : null,
+    );
+  }
+
+  void _setLayout(String layout) {
+    _controller.sendSceneControl(
+      activeScene: 'camera',
+      layout: layout,
+      stageDeviceIds: _controller.stageDeviceIds,
+      programDeviceId: _controller.programDeviceId,
+    );
+  }
+
   void _switchScene(String scene) {
-    setState(() => _activeScene = scene);
-    _controller.sendSceneControl(activeScene: scene);
+    _controller.sendSceneControl(
+      targetDeviceId: _selectedDeviceId,
+      programDeviceId: _selectedDeviceId,
+      activeScene: scene,
+      layout: _controller.layout,
+      stageDeviceIds: _controller.stageDeviceIds,
+    );
   }
 
   void _sendProducerChat({required bool isCue}) {
@@ -193,6 +371,217 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
       _selectedAnimationStyle = anim;
     });
     _pushOverlayLive(true);
+  }
+
+  void _featureComment(StudioChatMessage chatMsg) {
+    final featured = FeaturedComment(
+      streamId: widget.streamId,
+      senderName: chatMsg.senderName,
+      message: chatMsg.message,
+      platform: chatMsg.platform ?? 'director',
+      avatarUrl: chatMsg.avatarUrl,
+      isVisible: true,
+    );
+    _controller.sendFeaturedComment(featured);
+  }
+
+  void _takeDownFeaturedComment() {
+    if (_controller.activeFeaturedComment != null) {
+      final featured =
+          _controller.activeFeaturedComment!.copyWith(isVisible: false);
+      _controller.sendFeaturedComment(featured);
+    }
+  }
+
+  void _updateBranding() {
+    final config = BrandingConfig(
+      streamId: widget.streamId,
+      logoUrl: _logoUrlController.text,
+      logoPosition: 'top_right',
+      showLogo: _showLogo,
+      overlayColor: _brandingColorHex,
+    );
+    _controller.updateBranding(config);
+  }
+
+  void _updateBanner() {
+    final config = BannerConfig(
+      streamId: widget.streamId,
+      text: _bannerTextController.text,
+      isVisible: _bannerVisible,
+      isTicker: _bannerIsTicker,
+      backgroundColor: _brandingColorHex,
+      textColor: '#FFFFFF',
+    );
+    _controller.updateBanner(config);
+  }
+
+  Widget _buildBannersPanel() {
+    return Card(
+      color: const Color(0xff1e1e1e),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.flag, color: Colors.blueAccent, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Banners',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _bannerVisible ? Colors.grey[700] : Colors.blue,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  onPressed: () {
+                    setState(() => _bannerVisible = !_bannerVisible);
+                    _updateBanner();
+                  },
+                  child: Text(_bannerVisible ? 'HIDE' : 'SHOW', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _bannerTextController,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              decoration: const InputDecoration(
+                labelText: 'Banner Text',
+                filled: true,
+                fillColor: Color(0xff2a2a2a),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) {
+                if (_bannerVisible) _updateBanner();
+              },
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Text('Ticker Mode', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const Spacer(),
+                Switch(
+                  value: _bannerIsTicker,
+                  onChanged: (val) {
+                    setState(() => _bannerIsTicker = val);
+                    _updateBanner();
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBrandingPanel() {
+    return Card(
+      color: const Color(0xff1e1e1e),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.brush, color: Colors.pinkAccent, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Branding & Logos',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                Switch(
+                  value: _showLogo,
+                  activeThumbColor: Colors.pinkAccent,
+                  onChanged: (val) {
+                    setState(() => _showLogo = val);
+                    _updateBranding();
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _logoUrlController,
+              style: const TextStyle(color: Colors.white, fontSize: 12),
+              decoration: const InputDecoration(
+                labelText: 'Logo Image URL',
+                labelStyle: TextStyle(color: Colors.white60),
+                filled: true,
+                fillColor: Color(0xff2a2a2a),
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              onChanged: (_) => _updateBranding(),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Brand Color',
+              style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                _buildColorOption('#3B82F6', Colors.blue),
+                _buildColorOption('#EF4444', Colors.red),
+                _buildColorOption('#10B981', Colors.green),
+                _buildColorOption('#F59E0B', Colors.orange),
+                _buildColorOption('#8B5CF6', Colors.purple),
+                _buildColorOption('#EC4899', Colors.pink),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorOption(String hex, Color color) {
+    final isSelected = _brandingColorHex == hex;
+    return GestureDetector(
+      onTap: () {
+        setState(() => _brandingColorHex = hex);
+        _updateBranding();
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: isSelected 
+              ? Border.all(color: Colors.white, width: 2)
+              : null,
+          boxShadow: isSelected ? [BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8)] : null,
+        ),
+      ),
+    );
   }
 
   Widget _buildAudioVuMeter(double level) {
@@ -255,7 +644,7 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  _isConnected ? 'LIVE STUDIO' : 'CONNECTING',
+                  _isConnected ? 'BROADCAST STUDIO' : 'CONNECTING',
                   style: TextStyle(
                     color: _isConnected ? Colors.green : Colors.red,
                     fontWeight: FontWeight.bold,
@@ -266,26 +655,225 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
           ),
         ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 900;
-          return isWide
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 3, child: _buildPreviewViewport()),
-                    Expanded(flex: 2, child: _buildControlPanel()),
-                  ],
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      SizedBox(height: 380, child: _buildPreviewViewport()),
-                      _buildControlPanel(),
-                    ],
-                  ),
-                );
+      body: ListenableBuilder(
+        listenable: _controller,
+        builder: (context, _) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isWide = constraints.maxWidth > 900;
+              return isWide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 3,
+                          child: Column(
+                            children: [
+                              Expanded(flex: 2, child: _buildPreviewViewport()),
+                              Expanded(flex: 1, child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                                child: _buildBackstageArea(),
+                              )),
+                            ],
+                          ),
+                        ),
+                        Expanded(flex: 2, child: _buildControlPanel()),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          SizedBox(height: 380, child: _buildPreviewViewport()),
+                          _buildBackstageArea(),
+                          _buildControlPanel(),
+                        ],
+                      ),
+                    );
+            },
+          );
         },
+      ),
+    );
+  }
+
+  Widget _buildBackstageArea() {
+    return Card(
+      color: const Color(0xff1a1a1a),
+      margin: const EdgeInsets.only(bottom: 16),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.video_camera_back, color: Colors.blueAccent, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'BACKSTAGE (GUESTS)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white70,
+                    letterSpacing: 1.1,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: _controller.activeDevices.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'WAITING FOR GUESTS TO CONNECT...',
+                        style: TextStyle(color: Colors.white24, fontSize: 10, fontWeight: FontWeight.bold),
+                      ),
+                    )
+                  : ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _controller.activeDevices.length,
+                      itemBuilder: (context, index) {
+                  final deviceId = _controller.activeDevices.keys.elementAt(index);
+                  final heartbeat = _controller.activeDevices[deviceId]!;
+                  final isSelected = _selectedDeviceId == deviceId;
+                  final isOnStage = _controller.stageDeviceIds.contains(deviceId);
+
+                  return GestureDetector(
+                    onTap: () => setState(() => _selectedDeviceId = deviceId),
+                    child: Container(
+                      width: 180,
+                      margin: const EdgeInsets.only(right: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.black,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isOnStage
+                              ? Colors.blue
+                              : isSelected
+                                  ? Colors.green
+                                  : Colors.white12,
+                          width: 2,
+                        ),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: Stack(
+                        children: [
+                          // WebRTC Video Feed
+                          if (_controller.remoteRenderers.containsKey(deviceId))
+                            RTCVideoView(
+                              _controller.remoteRenderers[deviceId]!,
+                              objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+                            )
+                          else
+                            Center(
+                              child: Icon(
+                                Icons.videocam,
+                                color: isOnStage
+                                    ? Colors.blue
+                                    : isSelected
+                                        ? Colors.green
+                                        : Colors.white24,
+                                size: 32,
+                              ),
+                            ),
+                          
+                          // Stage Label
+                          if (isOnStage)
+                            Positioned(
+                              top: 0,
+                              left: 0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                color: Colors.blue,
+                                child: const Text(
+                                  'ON STAGE',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          Positioned(
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 2,
+                                  ),
+                                  color: Colors.black54,
+                                  child: Text(
+                                    deviceId,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: () => _toggleStage(deviceId),
+                                  child: Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 4),
+                                    color: isOnStage 
+                                        ? Colors.grey.withValues(alpha: 0.8)
+                                        : Colors.blue.withValues(alpha: 0.8),
+                                    child: Text(
+                                      isOnStage ? 'REMOVE' : 'ADD TO STAGE',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.forum, size: 14, color: Colors.white70),
+                                  padding: EdgeInsets.zero,
+                                  constraints: const BoxConstraints(),
+                                  onPressed: () => _openPrivateChat(deviceId),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.circle,
+                                  size: 8,
+                                  color: heartbeat.audioLevel != null &&
+                                          heartbeat.audioLevel! > 0.1
+                                      ? Colors.green
+                                      : Colors.white24,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -360,76 +948,81 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
                     ],
                   )
                 : Container(
-                    decoration: BoxDecoration(
-                      gradient: RadialGradient(
-                        center: Alignment.center,
-                        radius: 1.2,
-                        colors: [
-                          _torchOn
-                              ? const Color(0xff2a2a20)
-                              : const Color(0xff181c22),
-                          const Color(0xff0a0c10),
-                        ],
-                      ),
+                    decoration: const BoxDecoration(
+                      color: Colors.black,
                     ),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.videocam,
-                            size: 56,
-                            color: _isBroadcastingLive
-                                ? Colors.redAccent
-                                : Colors.white38,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _isBroadcastingLive
-                                ? 'PROGRAM VIDEO ON AIR'
-                                : 'CAMERA SOURCE CONNECTED',
-                            style: TextStyle(
-                              color: _isBroadcastingLive
-                                  ? Colors.redAccent
-                                  : Colors.white54,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '${_zoomLevel.toStringAsFixed(1)}x Zoom • ${_activeCameraIndex == 0 ? "Back Lens" : "Front Lens"}${_torchOn ? " • Torch ON" : ""}',
-                            style: const TextStyle(
-                              color: Colors.white30,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    child: _buildStageLayout(),
                   ),
           ),
 
-          // Tally Indicator
+          // Tally Indicator & Source Selector
           Positioned(
             top: 12,
             left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                _isBroadcastingLive
-                    ? 'ON AIR (${_activeScene.toUpperCase()})'
-                    : 'STANDBY (${_activeScene.toUpperCase()})',
-                style: TextStyle(
-                  color: _isBroadcastingLive ? Colors.red : Colors.amber,
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
+            right: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black87,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    _controller.isBroadcasting
+                        ? 'ON AIR (${_activeScene.toUpperCase()})'
+                        : 'STANDBY (${_activeScene.toUpperCase()})',
+                    style: TextStyle(
+                      color: _controller.isBroadcasting ? Colors.red : Colors.amber,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
-              ),
+                if (_controller.activeDevices.length > 1)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedDeviceId ??
+                            _controller.activeDevices.keys.first,
+                        dropdownColor: Colors.black87,
+                        isDense: true,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                        ),
+                        items: _controller.activeDevices.keys.map((id) {
+                          return DropdownMenuItem(
+                            value: id,
+                            child: Text('SOURCE: $id'),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          setState(() => _selectedDeviceId = val);
+                        },
+                      ),
+                    ),
+                  ),
+                const SizedBox(width: 8),
+                if (_controller.activeDevices.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.cast, color: Colors.blueAccent),
+                    onPressed: _requestP2PStream,
+                    tooltip: 'Request P2P Monitoring Stream',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black87,
+                      padding: const EdgeInsets.all(4),
+                    ),
+                  ),
+              ],
             ),
           ),
 
@@ -489,51 +1082,140 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
             ),
 
           // Heartbeat HUD (Bottom Right)
-          if (_latestHeartbeat != null)
+          if (_selectedDeviceId != null || _controller.activeDevices.isNotEmpty)
             Positioned(
               bottom: 12,
               right: 12,
+              child: _buildHeartbeatHud(),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStageLayout() {
+    final stageIds = _controller.stageDeviceIds;
+    if (stageIds.isEmpty) {
+      return const Center(
+        child: Text(
+          'STAGING AREA EMPTY',
+          style: TextStyle(color: Colors.white24, fontWeight: FontWeight.bold),
+        ),
+      );
+    }
+
+    if (_controller.layout == 'solo' || stageIds.length == 1) {
+      final deviceId = _controller.programDeviceId ?? stageIds.first;
+      return _buildRemoteVideo(deviceId);
+    }
+
+    if (_controller.layout == 'grid') {
+      return GridView.builder(
+        padding: const EdgeInsets.all(4),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: stageIds.length > 2 ? 2 : stageIds.length,
+          crossAxisSpacing: 4,
+          mainAxisSpacing: 4,
+          childAspectRatio: 1.6,
+        ),
+        itemCount: stageIds.length,
+        itemBuilder: (context, i) => _buildRemoteVideo(stageIds[i]),
+      );
+    }
+
+    if (_controller.layout == 'pip') {
+      return Stack(
+        children: [
+          _buildRemoteVideo(stageIds.first),
+          if (stageIds.length > 1)
+            Positioned(
+              right: 16,
+              bottom: 16,
+              width: 160,
+              height: 100,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
                 decoration: BoxDecoration(
-                  color: Colors.black87,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.white24),
+                  border: Border.all(color: Colors.white24, width: 2),
+                  boxShadow: const [BoxShadow(color: Colors.black54, blurRadius: 10)],
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.speed,
-                      color: Colors.greenAccent,
-                      size: 14,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${_latestHeartbeat!.deviceId} | ${_latestHeartbeat!.resolution} | ${_latestHeartbeat!.fps.toInt()} FPS',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    if (_latestHeartbeat!.audioLevel != null) ...[
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.equalizer,
-                        color: Colors.amberAccent,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      _buildAudioVuMeter(_latestHeartbeat!.audioLevel!),
-                    ],
-                  ],
-                ),
+                child: _buildRemoteVideo(stageIds[1]),
               ),
             ),
+        ],
+      );
+    }
+
+    return _buildRemoteVideo(stageIds.first);
+  }
+
+  Widget _buildRemoteVideo(String deviceId) {
+    if (_controller.remoteRenderers.containsKey(deviceId)) {
+      return RTCVideoView(
+        _controller.remoteRenderers[deviceId]!,
+        objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover,
+      );
+    }
+    return Container(
+      color: Colors.grey[900],
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.videocam_off, color: Colors.white24),
+            const SizedBox(height: 4),
+            Text(deviceId, style: const TextStyle(color: Colors.white24, fontSize: 10)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeartbeatHud() {
+    final devId = _selectedDeviceId ??
+        (_controller.activeDevices.isNotEmpty
+            ? _controller.activeDevices.keys.first
+            : null);
+    final heartbeat = devId != null ? _controller.activeDevices[devId] : null;
+
+    if (heartbeat == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.black87,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.speed,
+            color: Colors.greenAccent,
+            size: 14,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            '${heartbeat.deviceId} | ${heartbeat.resolution} | ${heartbeat.fps.toInt()} FPS',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 11,
+              fontFamily: 'monospace',
+            ),
+          ),
+          if (heartbeat.audioLevel != null) ...[
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.equalizer,
+              color: Colors.amberAccent,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            _buildAudioVuMeter(heartbeat.audioLevel!),
+          ],
         ],
       ),
     );
@@ -545,6 +1227,14 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _buildFloatingCommentsPanel(),
+          const SizedBox(height: 16),
+          _buildBrandingPanel(),
+          const SizedBox(height: 16),
+          _buildBannersPanel(),
+          const SizedBox(height: 16),
+          _buildRtmpOutputPanel(),
+          const SizedBox(height: 16),
           _buildSceneSwitcherCard(),
           const SizedBox(height: 16),
           _buildTeleprompterCueCard(),
@@ -558,6 +1248,190 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
           _buildCameraControlBar(),
           const SizedBox(height: 16),
           _buildPresetManager(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRtmpOutputPanel() {
+    return Card(
+      color: const Color(0xff1e1e1e),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.cast_connected, color: Colors.orange, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Broadcast Outputs (RTMP)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                TextButton.icon(
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('Add Output'),
+                  onPressed: _showAddRtmpDialog,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_rtmpDestinations.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  'No RTMP destinations configured.',
+                  style: TextStyle(color: Colors.white38, fontSize: 12),
+                ),
+              )
+            else
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _rtmpDestinations.length,
+                itemBuilder: (context, index) {
+                  final dest = _rtmpDestinations[index];
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                    leading: Icon(
+                      Icons.settings_input_component,
+                      color: dest.enabled ? Colors.green : Colors.white24,
+                      size: 20,
+                    ),
+                    title: Text(
+                      dest.platformName,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      dest.url,
+                      style: const TextStyle(color: Colors.white54, fontSize: 11),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Switch(
+                          value: dest.enabled,
+                          onChanged: (val) async {
+                            final updated = dest.copyWith(enabled: val);
+                            await _controller.saveRtmpDestination(updated);
+                            await _loadRtmpDestinations();
+                          },
+                          activeThumbColor: Colors.orange,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.play_arrow, color: Colors.green),
+                          onPressed: () => _controller.sendBroadcastCommand(
+                            command: 'start',
+                            destinationId: dest.id,
+                          ),
+                          tooltip: 'Start Stream',
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.stop, color: Colors.red),
+                          onPressed: () => _controller.sendBroadcastCommand(
+                            command: 'stop',
+                            destinationId: dest.id,
+                          ),
+                          tooltip: 'Stop Stream',
+                        ),
+                        if (dest.id != null)
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.white24),
+                            onPressed: () async {
+                              await _controller.deleteRtmpDestination(dest.id!);
+                              await _loadRtmpDestinations();
+                            },
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showAddRtmpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xff1e1e1e),
+        title: const Text('Add RTMP Destination'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: _rtmpPlatform,
+                dropdownColor: const Color(0xff2a2a2a),
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(labelText: 'Platform'),
+                items: ['YouTube', 'Twitch', 'Facebook', 'Discord', 'Custom']
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
+                onChanged: (val) => setState(() => _rtmpPlatform = val!),
+              ),
+              TextField(
+                controller: _rtmpUrlController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'RTMP Server URL',
+                  hintText: 'rtmp://a.rtmp.youtube.com/live2',
+                ),
+              ),
+              TextField(
+                controller: _rtmpKeyController,
+                style: const TextStyle(color: Colors.white),
+                decoration: const InputDecoration(
+                  labelText: 'Stream Key',
+                  hintText: 'xxxx-xxxx-xxxx-xxxx',
+                ),
+                obscureText: true,
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final dest = RtmpDestination(
+                streamId: widget.streamId,
+                platformName: _rtmpPlatform,
+                url: _rtmpUrlController.text,
+                streamKey: _rtmpKeyController.text,
+                enabled: true,
+              );
+              await _controller.saveRtmpDestination(dest);
+              await _loadRtmpDestinations();
+              if (!context.mounted) return;
+              Navigator.pop(context);
+              _rtmpUrlController.clear();
+              _rtmpKeyController.clear();
+            },
+            child: const Text('Save'),
+          ),
         ],
       ),
     );
@@ -577,7 +1451,7 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
                 Icon(Icons.video_library, color: Colors.redAccent, size: 20),
                 SizedBox(width: 8),
                 Text(
-                  'Scene Switcher',
+                  'Stage Layouts',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -589,14 +1463,61 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
             const SizedBox(height: 12),
             Row(
               children: [
-                _buildSceneButton('camera', 'Camera 1', Icons.camera_alt),
+                _buildLayoutButton('solo', 'Solo', Icons.person),
                 const SizedBox(width: 8),
-                _buildSceneButton('color_bars', 'Color Bars', Icons.grid_view),
+                _buildLayoutButton('grid', 'Grid', Icons.grid_4x4),
                 const SizedBox(width: 8),
-                _buildSceneButton('black_slate', 'Black Slate', Icons.block),
+                _buildLayoutButton('pip', 'PiP', Icons.picture_in_picture),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Row(
+              children: [
+                Icon(Icons.layers, color: Colors.redAccent, size: 20),
+                SizedBox(width: 8),
+                Text(
+                  'Scene Slates',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                _buildSceneButton('camera', 'Camera', Icons.camera_alt),
+                const SizedBox(width: 8),
+                _buildSceneButton('color_bars', 'Bars', Icons.grid_view),
+                const SizedBox(width: 8),
+                _buildSceneButton('black_slate', 'Black', Icons.block),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLayoutButton(String layoutKey, String label, IconData icon) {
+    final isActive = _controller.layout == layoutKey;
+    return Expanded(
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isActive ? Colors.blue : const Color(0xff2a2a2a),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+        onPressed: () => _setLayout(layoutKey),
+        icon: Icon(icon, size: 16),
+        label: Text(
+          label,
+          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -734,6 +1655,128 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
     );
   }
 
+  Widget _buildFloatingCommentsPanel() {
+    final featuredComment = _controller.activeFeaturedComment;
+
+    return Card(
+      color: const Color(0xff1e1e1e),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.comment, color: Colors.cyanAccent, size: 20),
+                    SizedBox(width: 8),
+                    Text(
+                      'Floating Comments',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                if (featuredComment != null && featuredComment.isVisible)
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red[900],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                    ),
+                    onPressed: _takeDownFeaturedComment,
+                    child:
+                        const Text('TAKE DOWN', style: TextStyle(fontSize: 10)),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              height: 200,
+              decoration: BoxDecoration(
+                color: const Color(0xff141414),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: _chatMessages.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No incoming comments yet...',
+                        style: TextStyle(color: Colors.white24, fontSize: 12),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(8),
+                      itemCount: _chatMessages.length,
+                      itemBuilder: (context, i) {
+                        final msg = _chatMessages[_chatMessages.length - 1 - i];
+                        final isFeatured = featuredComment != null &&
+                            featuredComment.isVisible &&
+                            featuredComment.message == msg.message &&
+                            featuredComment.senderName == msg.senderName;
+
+                        return Card(
+                          color: isFeatured
+                              ? Colors.cyan.withValues(alpha: 0.2)
+                              : const Color(0xff1e1e1e),
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundImage: msg.avatarUrl != null
+                                  ? NetworkImage(msg.avatarUrl!)
+                                  : null,
+                              radius: 16,
+                              child: msg.avatarUrl == null
+                                  ? const Icon(Icons.person)
+                                  : null,
+                            ),
+                            title: Text(
+                              msg.senderName,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              msg.message,
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 12),
+                            ),
+                            trailing: Icon(
+                              _getPlatformIcon(msg.platform),
+                              size: 16,
+                              color: Colors.white38,
+                            ),
+                            onTap: () => _featureComment(msg),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getPlatformIcon(String? platform) {
+    switch (platform?.toLowerCase()) {
+      case 'youtube':
+        return Icons.play_circle_filled;
+      case 'twitch':
+        return Icons.videogame_asset;
+      case 'facebook':
+        return Icons.facebook;
+      default:
+        return Icons.message;
+    }
+  }
+
   Widget _buildStreamMetadataCard() {
     return Card(
       color: const Color(0xff1e1e1e),
@@ -767,9 +1810,9 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
                 Row(
                   children: [
                     Text(
-                      _isBroadcastingLive ? 'ON AIR' : 'STANDBY',
+                      _controller.isBroadcasting ? 'ON AIR' : 'OFF AIR',
                       style: TextStyle(
-                        color: _isBroadcastingLive ? Colors.red : Colors.grey,
+                        color: _controller.isBroadcasting ? Colors.red : Colors.grey,
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
                       ),

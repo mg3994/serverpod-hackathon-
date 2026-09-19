@@ -2,6 +2,10 @@ overlayPreset:
   - savePreset:
   - listPresets:
   - deletePreset:
+rtmpDestination:
+  - saveDestination:
+  - listDestinations:
+  - deleteDestination:
 streamMetadata:
   - saveMetadata:
   - getMetadata:

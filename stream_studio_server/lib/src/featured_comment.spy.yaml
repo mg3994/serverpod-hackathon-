@@ -1,0 +1,8 @@
+class: FeaturedComment
+fields:
+  streamId: String
+  senderName: String
+  message: String
+  platform: String # "youtube", "twitch", "facebook", etc.
+  avatarUrl: String?
+  isVisible: bool

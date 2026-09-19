@@ -1,0 +1,7 @@
+class: BrandingConfig
+fields:
+  streamId: String
+  logoUrl: String?
+  logoPosition: String # "top_right", "top_left"
+  showLogo: bool
+  overlayColor: String # Primary branding color

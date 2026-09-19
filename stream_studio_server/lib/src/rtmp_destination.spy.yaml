@@ -1,0 +1,8 @@
+class: RtmpDestination
+table: rtmp_destination
+fields:
+  streamId: String
+  platformName: String
+  url: String
+  streamKey: String
+  enabled: bool

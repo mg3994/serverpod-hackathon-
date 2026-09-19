@@ -19,6 +19,8 @@ import 'package:stream_studio_server/src/generated/greetings/greeting.dart'
     as _ilhsq79m;
 import 'package:stream_studio_server/src/generated/overlay_preset.dart'
     as _iy80dre6;
+import 'package:stream_studio_server/src/generated/rtmp_destination.dart'
+    as _icopgf4p;
 import 'package:stream_studio_server/src/generated/stream_metadata.dart'
     as _ixrhpspk;
 import 'package:stream_studio_server/src/generated/studio_message.dart'
@@ -153,6 +155,8 @@ void withServerpod(
 class TestEndpoints {
   late final _OverlayPresetEndpoint overlayPreset;
 
+  late final _RtmpDestinationEndpoint rtmpDestination;
+
   late final _StreamMetadataEndpoint streamMetadata;
 
   late final _StudioEndpoint studio;
@@ -168,6 +172,10 @@ class _InternalTestEndpoints extends TestEndpoints
     _is.EndpointDispatch endpoints,
   ) {
     overlayPreset = _OverlayPresetEndpoint(
+      endpoints,
+      serializationManager,
+    );
+    rtmpDestination = _RtmpDestinationEndpoint(
       endpoints,
       serializationManager,
     );
@@ -273,6 +281,110 @@ class _OverlayPresetEndpoint {
           createSessionCallback: (_) => _localUniqueSession,
           endpointPath: 'overlayPreset',
           methodName: 'deletePreset',
+          parameters: _ist.testObjectToJson({'id': id}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<bool>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+}
+
+class _RtmpDestinationEndpoint {
+  _RtmpDestinationEndpoint(
+    this._endpointDispatch,
+    this._serializationManager,
+  );
+
+  final _is.EndpointDispatch _endpointDispatch;
+
+  final _is.SerializationManager _serializationManager;
+
+  _ida.Future<_icopgf4p.RtmpDestination> saveDestination(
+    _ist.TestSessionBuilder sessionBuilder,
+    _icopgf4p.RtmpDestination destination,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'rtmpDestination',
+            method: 'saveDestination',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'rtmpDestination',
+          methodName: 'saveDestination',
+          parameters: _ist.testObjectToJson({'destination': destination}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<_icopgf4p.RtmpDestination>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<List<_icopgf4p.RtmpDestination>> listDestinations(
+    _ist.TestSessionBuilder sessionBuilder,
+    String streamId,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'rtmpDestination',
+            method: 'listDestinations',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'rtmpDestination',
+          methodName: 'listDestinations',
+          parameters: _ist.testObjectToJson({'streamId': streamId}),
+          serializationManager: _serializationManager,
+        );
+        var _localReturnValue =
+            await (_localCallContext.method.call(
+                  _localUniqueSession,
+                  _localCallContext.arguments,
+                )
+                as _ida.Future<List<_icopgf4p.RtmpDestination>>);
+        return _localReturnValue;
+      } finally {
+        await _localUniqueSession.close();
+      }
+    });
+  }
+
+  _ida.Future<bool> deleteDestination(
+    _ist.TestSessionBuilder sessionBuilder,
+    int id,
+  ) async {
+    return _ist.callAwaitableFunctionAndHandleExceptions(() async {
+      var _localUniqueSession =
+          (sessionBuilder as _ist.InternalTestSessionBuilder).internalBuild(
+            endpoint: 'rtmpDestination',
+            method: 'deleteDestination',
+          );
+      try {
+        var _localCallContext = await _endpointDispatch.getMethodCallContext(
+          createSessionCallback: (_) => _localUniqueSession,
+          endpointPath: 'rtmpDestination',
+          methodName: 'deleteDestination',
           parameters: _ist.testObjectToJson({'id': id}),
           serializationManager: _serializationManager,
         );

@@ -28,6 +28,14 @@ webServer:
   publicScheme: http
 
 
+# This is the setup for the database.
+database:
+  isEmbedded: true
+  host: localhost
+  port: 5432
+  name: stream_studio
+  user: postgres
+
 # This is the setup for Redis.
 redis:
   enabled: false

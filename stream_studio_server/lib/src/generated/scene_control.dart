@@ -11,32 +11,55 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'package:serverpod/serverpod.dart' as _is;
+import 'package:stream_studio_server/src/generated/protocol.dart' as _icc0dkes;
 
 abstract class SceneControl
     implements _is.SerializableModel, _is.ProtocolSerialization {
   SceneControl._({
     required this.streamId,
+    this.targetDeviceId,
     required this.activeScene,
+    required this.layout,
+    required this.stageDeviceIds,
+    this.programDeviceId,
     this.transitionType,
   });
 
   factory SceneControl({
     required String streamId,
+    String? targetDeviceId,
     required String activeScene,
+    required String layout,
+    required List<String> stageDeviceIds,
+    String? programDeviceId,
     String? transitionType,
   }) = _SceneControlImpl;
 
   factory SceneControl.fromJson(Map<String, dynamic> jsonSerialization) {
     return SceneControl(
       streamId: jsonSerialization['streamId'] as String,
+      targetDeviceId: jsonSerialization['targetDeviceId'] as String?,
       activeScene: jsonSerialization['activeScene'] as String,
+      layout: jsonSerialization['layout'] as String,
+      stageDeviceIds: _icc0dkes.Protocol().deserialize<List<String>>(
+        jsonSerialization['stageDeviceIds'],
+      ),
+      programDeviceId: jsonSerialization['programDeviceId'] as String?,
       transitionType: jsonSerialization['transitionType'] as String?,
     );
   }
 
   String streamId;
 
+  String? targetDeviceId;
+
   String activeScene;
+
+  String layout;
+
+  List<String> stageDeviceIds;
+
+  String? programDeviceId;
 
   String? transitionType;
 
@@ -45,7 +68,11 @@ abstract class SceneControl
   @_is.useResult
   SceneControl copyWith({
     String? streamId,
+    String? targetDeviceId,
     String? activeScene,
+    String? layout,
+    List<String>? stageDeviceIds,
+    String? programDeviceId,
     String? transitionType,
   });
   @override
@@ -53,7 +80,11 @@ abstract class SceneControl
     return {
       '__className__': 'SceneControl',
       'streamId': streamId,
+      if (targetDeviceId != null) 'targetDeviceId': targetDeviceId,
       'activeScene': activeScene,
+      'layout': layout,
+      'stageDeviceIds': stageDeviceIds.toJson(),
+      if (programDeviceId != null) 'programDeviceId': programDeviceId,
       if (transitionType != null) 'transitionType': transitionType,
     };
   }
@@ -63,7 +94,11 @@ abstract class SceneControl
     return {
       '__className__': 'SceneControl',
       'streamId': streamId,
+      if (targetDeviceId != null) 'targetDeviceId': targetDeviceId,
       'activeScene': activeScene,
+      'layout': layout,
+      'stageDeviceIds': stageDeviceIds.toJson(),
+      if (programDeviceId != null) 'programDeviceId': programDeviceId,
       if (transitionType != null) 'transitionType': transitionType,
     };
   }
@@ -79,11 +114,19 @@ class _Undefined {}
 class _SceneControlImpl extends SceneControl {
   _SceneControlImpl({
     required String streamId,
+    String? targetDeviceId,
     required String activeScene,
+    required String layout,
+    required List<String> stageDeviceIds,
+    String? programDeviceId,
     String? transitionType,
   }) : super._(
          streamId: streamId,
+         targetDeviceId: targetDeviceId,
          activeScene: activeScene,
+         layout: layout,
+         stageDeviceIds: stageDeviceIds,
+         programDeviceId: programDeviceId,
          transitionType: transitionType,
        );
 
@@ -93,12 +136,25 @@ class _SceneControlImpl extends SceneControl {
   @override
   SceneControl copyWith({
     String? streamId,
+    Object? targetDeviceId = _Undefined,
     String? activeScene,
+    String? layout,
+    List<String>? stageDeviceIds,
+    Object? programDeviceId = _Undefined,
     Object? transitionType = _Undefined,
   }) {
     return SceneControl(
       streamId: streamId ?? this.streamId,
+      targetDeviceId: targetDeviceId is String?
+          ? targetDeviceId
+          : this.targetDeviceId,
       activeScene: activeScene ?? this.activeScene,
+      layout: layout ?? this.layout,
+      stageDeviceIds:
+          stageDeviceIds ?? this.stageDeviceIds.map((e0) => e0).toList(),
+      programDeviceId: programDeviceId is String?
+          ? programDeviceId
+          : this.programDeviceId,
       transitionType: transitionType is String?
           ? transitionType
           : this.transitionType,
