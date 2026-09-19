@@ -108,6 +108,15 @@ class StudioController extends ChangeNotifier {
       );
       _inboundSubscription = inStream.listen(
         (msg) {
+          // Ignore messages sent by ourselves
+          if (ownDeviceId != null) {
+            bool isSelf = false;
+            if (msg.chatMessage?.senderName == ownDeviceId) isSelf = true;
+            if (msg.heartbeat?.deviceId == ownDeviceId) isSelf = true;
+            if (msg.signalingMessage?.senderId == ownDeviceId) isSelf = true;
+            if (isSelf) return;
+          }
+
           _isConnected = true;
           _reconnectAttempts = 0;
           if (msg.heartbeat != null) {
@@ -192,6 +201,9 @@ class StudioController extends ChangeNotifier {
   // --- WebRTC Signaling Logic ---
 
   Future<void> _handleSignalingInternal(SignalingMessage signaling) async {
+    // Only handle messages directed to us
+    if (signaling.targetId != (ownDeviceId ?? 'dashboard')) return;
+
     if (signaling.type == 'offer') {
       await _handleOffer(signaling);
     } else if (signaling.type == 'answer') {

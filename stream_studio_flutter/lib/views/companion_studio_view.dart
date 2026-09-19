@@ -298,7 +298,7 @@ class _CompanionStudioViewState extends State<CompanionStudioView> {
 
     _controller.sendSignalingMessage(
       SignalingMessage(
-        senderId: _companionId,
+        senderId: _controller.ownDeviceId ?? 'dashboard',
         targetId: target,
         type: 'request',
       ),

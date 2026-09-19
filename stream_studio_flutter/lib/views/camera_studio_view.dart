@@ -61,6 +61,7 @@ class _CameraStudioViewState extends State<CameraStudioView>
       client: widget.client,
       streamId: widget.streamId,
     );
+    _controller.ownDeviceId = _deviceId;
 
     _initializeRealCamera();
     _setupStudioCamera();
